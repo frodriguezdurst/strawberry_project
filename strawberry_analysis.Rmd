@@ -32,9 +32,6 @@ library(ggVennDiagram)
 library(decontam)
 library(iNEXT)
 
-#Set working directory
-setwd("C:/Users/franc/Desktop/Keck_Strawberry_Project")
-
 #Load seqtable.nochim and taxa from dada2 files from Kacie
 seqtable.nochim <- readRDS('./raw_data/dada2_seqtable.RDS')
 taxa <- readRDS('./raw_data/RDP_Taxonomy_from_dada2.RDS')
@@ -450,40 +447,33 @@ ps.noncontam
 ################  POST-DECONTAM  ############################################
 #############################################################################
 
-##SPECIES ACCUMULATION CURVES - ALPHA + BETA DIVERSITY ######################
+##SUBSET DATA BY PRE/POST STRESS AND INOC X WATER TREATMENT #################
 
 ##POST INOC PRE STRESS ######################################################
 
 #post_inoc_pre_stress table 
 post_inoc_pre_stress_ps <- subset_samples(ps.noncontam, sample_data(ps.noncontam)$SampleType=="post_inoc_pre_stress")
-post_inoc_pre_stress_ps <- prune_taxa(taxa_sums(post_inoc_pre_stress_ps) > 0, post_inoc_pre_stress_ps)
 
 ##label post_inoc_pre_stress by inoculation
 post_inoc_pre_stress_i1 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "1")
   post_inoc_pre_stress_i1 <- as.data.frame(otu_table(post_inoc_pre_stress_i1))
-  sum_post_inoc_pre_stress_i1 <- colSums(post_inoc_pre_stress_i1)
   
 post_inoc_pre_stress_i2 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "2")
   post_inoc_pre_stress_i2 <- as.data.frame(otu_table(post_inoc_pre_stress_i2))
-  sum_post_inoc_pre_stress_i2 <- colSums(post_inoc_pre_stress_i2)
   
 post_inoc_pre_stress_i3 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "3")
   post_inoc_pre_stress_i3 <- as.data.frame(otu_table(post_inoc_pre_stress_i3))
-  sum_post_inoc_pre_stress_i3 <- colSums(post_inoc_pre_stress_i3)
   
 post_inoc_pre_stress_i4 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "4")
   post_inoc_pre_stress_i4 <- as.data.frame(otu_table(post_inoc_pre_stress_i4))
-  sum_post_inoc_pre_stress_i4 <- colSums(post_inoc_pre_stress_i4)
   
 post_inoc_pre_stress_i5 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "5")
   post_inoc_pre_stress_i5 <- as.data.frame(otu_table(post_inoc_pre_stress_i5))
-  sum_post_inoc_pre_stress_i5 <- colSums(post_inoc_pre_stress_i5)
   
 ##POST INOC POST STRESS#####################################################
 
 #post_inoc_post_stress table 
 post_inoc_post_stress_ps <- subset_samples(ps.noncontam, sample_data(ps.noncontam)$SampleType=="post_inoc_post_stress")
-post_inoc_post_stress_ps <- prune_taxa(taxa_sums(post_inoc_post_stress_ps) > 0, post_inoc_post_stress_ps)
 
 ##label post_inoc_post_stress by inoculation x water treatment
 
@@ -536,6 +526,13 @@ post_inoc_post_stress_i5_w2 <- subset_samples(post_inoc_post_stress_ps, sample_d
 
 post_inoc_post_stress_i5_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "5" & sample_data(post_inoc_post_stress_ps)$Water == "3")
   post_inoc_post_stress_i5_w3 <- as.data.frame(otu_table(post_inoc_post_stress_i5_w3))
+
+```
+
+```{r}
+#############################################################################
+################  POST-DECONTAM  ############################################
+#############################################################################
 
 #############################################################################
 ##GENERATE SPECIES ACCUMULATION CURVES (BETA DIVERSITY) #####################
@@ -667,6 +664,14 @@ plot(accurve_posti5w3$sites, accurve_posti5w3$richness,
      ylab = "Species richness",
      main = "Post-inoc post-stress ASVs - i5 x w3")
 
+```
+
+```{r}
+
+#############################################################################
+################  POST-DECONTAM  ############################################
+#############################################################################
+
 #############################################################################
 ## GENERATE ASVS BY SEQUENCING DEPTH CURVES (ALPHA DIVERSITY) ###############
 #############################################################################
@@ -676,60 +681,50 @@ par(mfrow=c(4,5))
 ##POST INOC PRE STRESS#######################################################
 
 #post_inoc_pre_stress_i1
-data(post_inoc_pre_stress_i1)
-S1 <- specnumber(post_inoc_pre_stress_i1) # observed number of species
 rarecurve(post_inoc_pre_stress_i1,
-          step = 20, 
+          step = 1, 
           col = "blue", 
-          label = "",
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc pre-stress ASVs - Inoculation 1")
 
 #post_inoc_pre_stress_i2
-data(post_inoc_pre_stress_i2)
-S2 <- specnumber(post_inoc_pre_stress_i2) # observed number of species
 rarecurve(post_inoc_pre_stress_i2, 
           step = 20, 
           col = "blue", 
-          label = "",
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc pre-stress ASVs - Inoculation 2")
 
 #post_inoc_pre_stress_i3
-data(post_inoc_pre_stress_i3)
-S3 <- specnumber(post_inoc_pre_stress_i3) # observed number of species
 rarecurve(post_inoc_pre_stress_i3, 
           step = 20, 
           col = "blue", 
-          label = "",
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size",
           ylab = "ASV", 
           main = "Post-inoc pre-stress ASVs - Inoculation 3")
 
 #post_inoc_pre_stress_i4
-data(post_inoc_pre_stress_i4)
-S4 <- specnumber(post_inoc_pre_stress_i4) # observed number of species
 rarecurve(post_inoc_pre_stress_i4, 
           step = 20, 
           col = "blue", 
-          label = "",
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc pre-stress ASVs - Inoculation 4")
 
 #post_inoc_pre_stress_i5
-data(post_inoc_pre_stress_i5)
-S5 <- specnumber(post_inoc_pre_stress_i5) # observed number of species
 rarecurve(post_inoc_pre_stress_i5, 
           step = 20, 
           col = "blue", 
-          label = "",
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
@@ -739,11 +734,9 @@ rarecurve(post_inoc_pre_stress_i5,
 
 ##INOCULATION 1
 #post_inoc_post_stress_i1_w1
-data(post_inoc_post_stress_i1_w1)
-S11 <- specnumber(post_inoc_post_stress_i1_w1) # observed number of species
 rarecurve(post_inoc_post_stress_i1_w1, 
           step = 20,
-          label = "",
+          label = FALSE,
           col = "blue", 
           cex = 0.6, 
           xlab = "Sample Size", 
@@ -751,24 +744,20 @@ rarecurve(post_inoc_post_stress_i1_w1,
           main = "Post-inoc post-stress ASVs - i1 x w1")
 
 #post_inoc_post_stress_i1_w2
-data(post_inoc_post_stress_i1_w2)
-S12 <- specnumber(post_inoc_post_stress_i1_w2) # observed number of species
 rarecurve(post_inoc_post_stress_i1_w2, 
           step = 20, 
           col = "blue",
-          label = "",
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i1 x w2")
 
 #post_inoc_post_stress_i1_w3
-data(post_inoc_post_stress_i1_w3)
-S13 <- specnumber(post_inoc_post_stress_i1_w3) # observed number of species
 rarecurve(post_inoc_post_stress_i1_w3, 
           step = 20, 
           col = "blue", 
-          label = "",
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
@@ -776,34 +765,30 @@ rarecurve(post_inoc_post_stress_i1_w3,
 
 ##INOCULATION 2
 #post_inoc_post_stress_i2_w1
-data(post_inoc_post_stress_i2_w1)
-S21 <- specnumber(post_inoc_post_stress_i2_w1) # observed number of species
 rarecurve(post_inoc_post_stress_i2_w1, 
           step = 20, 
           col = "blue", 
-          label = "",
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i2 x w1")
 
 #post_inoc_post_stress_i2_w2
-data(post_inoc_post_stress_i2_w2)
-S22 <- specnumber(post_inoc_post_stress_i2_w2) # observed number of species
 rarecurve(post_inoc_post_stress_i2_w2, 
           step = 20, 
-          col = "blue", label = "",
+          col = "blue", 
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i2 x w2")
 
 #post_inoc_post_stress_i2_w3
-data(post_inoc_post_stress_i2_w3)
-S23 <- specnumber(post_inoc_post_stress_i2_w3) # observed number of species
 rarecurve(post_inoc_post_stress_i2_w3, 
           step = 20, 
-          col = "blue", label = "",
+          col = "blue", 
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
@@ -811,67 +796,61 @@ rarecurve(post_inoc_post_stress_i2_w3,
 
 ##INOCULATION 3
 #post_inoc_post_stress_i3_w1
-data(post_inoc_post_stress_i3_w1)
-S31 <- specnumber(post_inoc_post_stress_i3_w1) # observed number of species
 rarecurve(post_inoc_post_stress_i3_w1, 
           step = 20, 
-          col = "blue", label = "",
+          col = "blue", 
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i3 x w1")
 
 #post_inoc_post_stress_i3_w2
-data(post_inoc_post_stress_i3_w2)
-S32 <- specnumber(post_inoc_post_stress_i3_w2) # observed number of species
 rarecurve(post_inoc_post_stress_i3_w2, 
           step = 20, 
-          col = "blue", label = "",
+          col = "blue", 
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i3 x w2")
 
 #post_inoc_post_stress_i3_w3
-data(post_inoc_post_stress_i3_w3)
-S33 <- specnumber(post_inoc_post_stress_i3_w3) # observed number of species
 rarecurve(post_inoc_post_stress_i3_w3, 
           step = 20, 
           col = "blue", 
-          cex = 0.6, label = "",
+          cex = 0.6, 
+          label = FALSE,
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i3 x w3")
 
 ##INOCULATION 4
 #post_inoc_post_stress_i4_w1
-data(post_inoc_post_stress_i4_w1)
-S41 <- specnumber(post_inoc_post_stress_i4_w1) # observed number of species
 rarecurve(post_inoc_post_stress_i4_w1, 
           step = 20, 
-          col = "blue", label = "",
+          col = "blue", 
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i4 x w1")
 
 #post_inoc_post_stress_i4_w2
-data(post_inoc_post_stress_i4_w2)
-S42 <- specnumber(post_inoc_post_stress_i4_w2) # observed number of species
 rarecurve(post_inoc_post_stress_i4_w2, 
           step = 20, 
           col = "blue", 
-          cex = 0.6, label = "",
+          cex = 0.6, 
+          label = FALSE,
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i4 x w2")
 
 #post_inoc_post_stress_i4_w3
-data(post_inoc_post_stress_i4_w3)
-S43 <- specnumber(post_inoc_post_stress_i4_w3) # observed number of species
 rarecurve(post_inoc_post_stress_i4_w3, 
           step = 20, 
-          col = "blue", label = "",
+          col = "blue", 
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
@@ -880,33 +859,30 @@ rarecurve(post_inoc_post_stress_i4_w3,
 
 ##INOCULATION 5 
 #post_inoc_post_stress_i5_w1
-data(post_inoc_post_stress_i5_w1)
-S51 <- specnumber(post_inoc_post_stress_i5_w1) # observed number of species
 rarecurve(post_inoc_post_stress_i5_w1, 
           step = 20, 
-          col = "blue", label = "",
+          col = "blue", 
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i5 x w1")
 
 #post_inoc_post_stress_i5_w2
-data(post_inoc_post_stress_i5_w2)
-S52 <- specnumber(post_inoc_post_stress_i5_w2) # observed number of species
 rarecurve(post_inoc_post_stress_i5_w2, 
           step = 20, 
           col = "blue", 
-          cex = 0.6, label = "",
+          cex = 0.6, 
+          label = FALSE,
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc post-stress ASVs - i5 x w2")
 
 #post_inoc_post_stress_i5_w3
-data(post_inoc_post_stress_i5_w3)
-S53 <- specnumber(post_inoc_post_stress_i5_w3) # observed number of species
 rarecurve(post_inoc_post_stress_i5_w3, 
           step = 20, 
-          col = "blue", label = "",
+          col = "blue", 
+          label = FALSE,
           cex = 0.6, 
           xlab = "Sample Size", 
           ylab = "ASV", 
@@ -943,7 +919,6 @@ rel_abund <- transformed_pips_ASV / colSums(transformed_pips_ASV)
 #pull out tax table and metadata from post_inoc_post_stress_ps to create new phyloseq object
 pips_metadata <- as(sample_data(post_inoc_post_stress_ps), 'matrix')
 pips_metadata <- as.data.frame(pips_metadata)
-
 pips_taxtable <- as(tax_table(post_inoc_post_stress_ps), 'matrix')
 
 #Create new phyloseq object with transformed table
@@ -973,7 +948,7 @@ names(pips_complete)[14] <- 'SpeciesRichness'
 str(pips_complete)
 
 #write this to .csv
-pips_complete <- write.csv(pips_complete, "./output/pips_complete.csv")
+pips_complete <- write.csv(pips_complete, "./pips_data/pips_complete.csv")
 
 #boxplot by inoculation
 ggplot(pips_complete, aes(x=Inoculation, y=SpeciesRichness)) + 
@@ -1134,7 +1109,7 @@ ggplot(filtered_dat, aes(log(SpeciesRichness))) +
 ## root:shoot calculation ###################################################
 
 #load data with root:shoot ratio and total biomass (values calculated in excel)
-ratio_data <- read.csv("C:/Users/franc/Desktop/Keck_Strawberry_Project/clean_data/pips_fulledit.csv")
+
 
 
 ```
