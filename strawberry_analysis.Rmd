@@ -103,10 +103,8 @@ taxa_names(ps) <- pretty_names
 
 ```{r}
 #############################################################################
-################  PRE-DECONTAM  #############################################
+############  PRE-DECONTAM: VENN DIAGRAMS  ##################################
 #############################################################################
-
-##CHECK ASV TABLES FOR COUNTS / SAMPLE IDS + VENN DIAGRAM ###################
 
 # pre inoc table
 pre_inoc_ps <- subset_samples(ps, sample_data(ps)$SampleType=="pre_inoc")
@@ -215,10 +213,8 @@ ASV_index <- which(ASV_sums > 1)
 
 ```{r}
 #############################################################################
-################  PRE-DECONTAM  #############################################
+####### PRE-DECONTAM: DETERMINE MEAN/STD. E OF SAMPLES ######################
 #############################################################################
-
-#Housekeeping - determining mean/std. error of samples 
 
 ##subset slurry by inoculation ##############################################
 slurry1 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 1")
@@ -337,10 +333,8 @@ mean.SE.ASVs <-  write.csv(mean.SE.ASVs, "./output/mean.SE.ASVs.csv")
 
 ```{r}
 #############################################################################
-################  PRE-DECONTAM  #############################################
+###### PRE-DECONTAM: CHECK SPREAD OF NEGATIVE CONTROL ASVS  #################
 #############################################################################
-
-##Combine ASV tables to see spread of negative control ASVs across samples ####
 
 ##DNA PCR NEG####
 DNA_PCR_neg_ps <- subset_samples(ps, sample_data(ps)$SampleType=="DNA_PCR_neg") #DNA_PCR_neg table
@@ -444,10 +438,8 @@ ps.noncontam
 
 ```{r}
 #############################################################################
-################  POST-DECONTAM  ############################################
+### POST-DECONTAM: DATA BY PRE/POST STRESS AND INOC X WATER TREATMENT   #####
 #############################################################################
-
-##SUBSET DATA BY PRE/POST STRESS AND INOC X WATER TREATMENT #################
 
 ##POST INOC PRE STRESS ######################################################
 
@@ -531,11 +523,7 @@ post_inoc_post_stress_i5_w3 <- subset_samples(post_inoc_post_stress_ps, sample_d
 
 ```{r}
 #############################################################################
-################  POST-DECONTAM  ############################################
-#############################################################################
-
-#############################################################################
-##GENERATE SPECIES ACCUMULATION CURVES (BETA DIVERSITY) #####################
+#####  POST-DECONTAM: SPECIES ACCUMULATION CURVES (BETA DIVERSITY)  #########
 #############################################################################
   
 par(mfrow=c(4,5))
@@ -669,11 +657,7 @@ plot(accurve_posti5w3$sites, accurve_posti5w3$richness,
 ```{r}
 
 #############################################################################
-################  POST-DECONTAM  ############################################
-#############################################################################
-
-#############################################################################
-## GENERATE ASVS BY SEQUENCING DEPTH CURVES (ALPHA DIVERSITY) ###############
+#####  POST-DECONTAM: SEQ DEPTH CURVES (ALPHA DIVERSITY)  ###################
 #############################################################################
 
 par(mfrow=c(4,5))
@@ -895,18 +879,14 @@ rarecurve(post_inoc_post_stress_i5_w3,
 ``` {r}
 
 #############################################################################
-################  POST-DECONTAM  ############################################
+################  POST-DECONTAM: NMDS #######################################
 #############################################################################
 
 library(labdsv)
 library(metagMisc)
 
-## NMDS plot ################################################################
-
 #determine relative abundance + NMDS plot - drop all the post-inoc/pre-stress samples from future analysis
 #post_inoc_post_stress table 
-post_inoc_post_stress_ps <- subset_samples(ps.noncontam, sample_data(ps.noncontam)$SampleType=="post_inoc_post_stress")
-post_inoc_post_stress_ps <- prune_taxa(taxa_sums(post_inoc_post_stress_ps) > 0, post_inoc_post_stress_ps)
 post_inoc_post_stress_asv <- as.data.frame(otu_table(post_inoc_post_stress_ps))
 post_inoc_post_stress_asv
 
@@ -947,9 +927,6 @@ pips_complete <- dplyr::bind_cols(pips_metadata, richness_sums)
 names(pips_complete)[14] <- 'SpeciesRichness'
 str(pips_complete)
 
-#write this to .csv
-pips_complete <- write.csv(pips_complete, "./pips_data/pips_complete.csv")
-
 #boxplot by inoculation
 ggplot(pips_complete, aes(x=Inoculation, y=SpeciesRichness)) + 
     geom_boxplot() +theme_light() + geom_point()
@@ -962,106 +939,23 @@ ggplot(pips_complete, aes(x=Inoculation, y=SpeciesRichness, fill=Water)) +
 ggplot(pips_complete, aes(x=Inoculation, y=SpeciesRichness, fill=Water)) + 
     geom_boxplot() + theme_light() + facet_wrap(~ Type)
 
+#write this to .csv
+pips_complete <- write.csv(pips_complete, "./pips_data/pips_complete.csv")
 
 ```
 
 ```{r}
 
 #############################################################################
-################  POST-DECONTAM  ############################################
+################  POST-DECONTAM: ANOVA  #####################################
 #############################################################################
 
 library(tidyverse)
 library(car)
 library(ggpubr)
+library(effects)
 
-#subset pips data by inoc x water type
-
-## subset by inoculation / root / shoot ##
-#inoculation 1 
-pips_i1_w1 <- subset(pips_complete, Inoculation == "1" & Water == "1")
-pips_i1_w1_root <- subset(pips_complete, Inoculation == "1" & Water == "1" & Type == "Root")
-pips_i1_w1_shoot <- subset(pips_complete, Inoculation == "1" & Water == "1" & Type == "Shoot")
-
-pips_i1_w2 <- subset(pips_complete, Inoculation == "1" & Water == "2")
-pips_i1_w2_root <- subset(pips_complete, Inoculation == "1" & Water == "2" & Type == "Root")
-pips_i1_w2_shoot <- subset(pips_complete, Inoculation == "1" & Water == "2" & Type == "Shoot")
-
-pips_i1_w3 <- subset(pips_complete, Inoculation == "1" & Water == "3")
-pips_i1_w3_root <- subset(pips_complete, Inoculation == "1" & Water == "3" & Type == "Root")
-pips_i1_w3_shoot <- subset(pips_complete, Inoculation == "1" & Water == "3" & Type == "Shoot")
-
-#inoculation 2
-pips_i2_w1 <- subset(pips_complete, Inoculation == "2" & Water == "1")
-pips_i2_w2 <- subset(pips_complete, Inoculation == "2" & Water == "2")
-pips_i2_w3 <- subset(pips_complete, Inoculation == "2" & Water == "3")
-
-#inoculation 3
-pips_i3_w1 <- subset(pips_complete, Inoculation == "3" & Water == "1")
-pips_i3_w2 <- subset(pips_complete, Inoculation == "3" & Water == "2")
-pips_i3_w3 <- subset(pips_complete, Inoculation == "3" & Water == "3")
-
-#inoculation 4
-pips_i4_w1 <- subset(pips_complete, Inoculation == "4" & Water == "1")
-pips_i4_w2 <- subset(pips_complete, Inoculation == "4" & Water == "2")
-pips_i4_w3 <- subset(pips_complete, Inoculation == "4" & Water == "3")
-
-#inoculation 5
-pips_i5_w1 <- subset(pips_complete, Inoculation == "5" & Water == "1")
-pips_i5_w2 <- subset(pips_complete, Inoculation == "5" & Water == "2")
-pips_i5_w3 <- subset(pips_complete, Inoculation == "5" & Water == "3")
-
-## subset by water treatment ##
-#water treatment 1
-pips_w1 <- subset(pips_complete, Water == "1")
-
-#water treatment 2
-pips_w2 <- subset(pips_complete, Water == "2")
-
-#water treatment 3
-pips_w3 <- subset(pips_complete, Water == "3")
-
-##############################################################################
-############ ROOT - SPECIES RICHNESS #########################################
-##############################################################################
-
-#test using shapiro-wilks and qqplots
-shapiro.test(pips_i1_w1$SpeciesRichness)
-qqPlot(log(pips_i1_w1_root$SpeciesRichness))
-ggqqplot(log(pips_i1_w1_root$SpeciesRichness))
-
-ggdensity(log(pips_i1_w1_root$SpeciesRichness))
-
-
-##############################################################################
-############ SHOOT - SPECIES RICHNESS ########################################
-##############################################################################
-
-## SHOOT - SPECIES RICHNESS ## 
-ggqqplot(log(pips_i1_w1_shoot$SpeciesRichness), main = "Shoot: I1 x W1", y = "log(Species_Richness)")
-
-##############################################################################
-############## TOTAL BIOMASS #################################################
-##############################################################################
-
-
-
-##############################################################################
-################ ROOT:SHOOT ##################################################
-##############################################################################
-
-
-```
-
-
-```{r} 
-
-## ANOVA ####################################################################
-
-library(tidyverse)
-library(car)
-
-dat = read_csv("C:/Users/franc/Desktop/Keck_Strawberry_Project/output/pips_complete.csv") |>
+dat = read_csv("./pips_data/pips_complete.csv") |>
   mutate(
     Inoculation = as.character(Inoculation),
     Water = as.character(Water)
@@ -1072,43 +966,139 @@ ggplot(dat, aes(Inoculation, SpeciesRichness, fill = Water)) +
   scale_y_log10() +
   geom_boxplot()
 
+## SPECIES RICHNESS: ROOTS AND SHOOTS ########################################
 # interaction model
-fit = aov(log(SpeciesRichness) ~ Type + Inoculation * Water, data = dat)
-Anova(fit, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
+fit1 = aov(log(SpeciesRichness) ~ Type + Inoculation * Water, data = dat)
+Anova(fit1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
 
 # additive model
-fit = aov(log(SpeciesRichness) ~ Type + Inoculation + Water, data = dat)
-Anova(fit, type = "2") # if you don't have interactions, type-2 sums-of-squares is appropriate
+fit2 = aov(log(SpeciesRichness) ~ Type + Inoculation + Water, data = dat)
+Anova(fit2, type = "2") # if you don't have interactions, type-2 sums-of-squares is appropriate
 
-# post-hoc tests
-TukeyHSD(fit) # don't do this
-
-plot(fit)
+#plot to check residuals
+plot(fit1)
+plot(fit2)
 
 # Studentized residuals
-MASS::studres(fit) |>
+MASS::studres(fit1) |>
   abs() |>
   sort()
 
+#remove the outliers, re-run the analysis
 filtered_dat = dat[-c(401, 78, 34, 81, 123), ]
-fit = aov(log(SpeciesRichness) ~ Type + Inoculation + Water, data = filtered_dat)
-plot(fit)
 
-shapiro.test(fit$residuals)
+#interaction model
+filtered_fit1 = aov(log(SpeciesRichness) ~ Type + Inoculation * Water, data = filtered_dat)
+Anova(filtered_fit1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
+
+#additive model 
+filtered_fit2 = aov(log(SpeciesRichness) ~ Type + Inoculation + Water, data = filtered_dat)
+Anova(filtered_fit2, type = "2")
+plot(filtered_fit2)
+
+#check the outliers again
+shapiro.test(filtered_fit$residuals)
 leveneTest(log(SpeciesRichness) ~ Water, data = dat[-c(401, 78, 34, 81, 123), ])
 
 filtered_dat = filtered_dat |>
-  mutate(res = resid(fit))
+  mutate(res = resid(filtered_fit1))
 
+#plot the filtered data to check the spread
 ggplot(filtered_dat, aes(log(SpeciesRichness))) +
   facet_grid(Water ~ Inoculation) +
   # scale_x_log10() +
   geom_histogram()
 
+## SPECIES RICHNESS: ROOTS ###################################################
 
-## root:shoot calculation ###################################################
+root_dat = subset(filtered_dat, Type == "Root")
+
+#interaction model
+root_fit1 = aov(log(SpeciesRichness) ~ Inoculation * Water, data = root_dat)
+Anova(root_fit1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
+plot(root_fit1)
+plot(allEffects(root_fit1))
+
+#additive model 
+root_fit2 = aov(log(SpeciesRichness) ~ Inoculation + Water, data = root_dat)
+Anova(root_fit2, type = "2")
+plot(root_fit2)
+plot(allEffects(root_fit2))
+
+
+## SPECIES RICHNESS: SHOOTS  #################################################
+
+shoot_dat = subset(filtered_dat, Type == "Shoot")
+
+#interaction model
+shoot_fit1 = aov(log(SpeciesRichness) ~ Inoculation * Water, data = shoot_dat)
+Anova(shoot_fit1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
+plot(shoot_fit1)
+plot(allEffects(shoot_fit1))
+
+#additive model 
+shoot_fit2 = aov(log(SpeciesRichness) ~ Inoculation + Water, data = shoot_dat)
+Anova(shoot_fit2, type = "2")
+plot(shoot_fit2)
+plot(allEffects(shoot_fit2))
+
+
+## TOTAL BIOMASS: ROOTS  #####################################################
+
+#interaction model
+root_mass1= aov(WeightGrams ~ Inoculation * Water, data = root_dat)
+Anova(root_mass1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
+plot(root_mass1)
+plot(allEffects(root_mass1))
+
+#additive model
+root_mass2 = aov(WeightGrams ~ Inoculation + Water, data = root_dat)
+Anova(root_mass2, type = "2")
+plot(root_mass2)
+plot(allEffects(root_mass2))
+
+
+## TOTAL BIOMASS: SHOOTS #####################################################
+#interaction model
+shoot_mass1 = aov(WeightGrams ~ Inoculation * Water, data = shoot_dat)
+Anova(shoot_mass1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
+plot(shoot_mass1)
+plot(allEffects(shoot_mass1))
+
+#additive model
+shoot_mass2 = aov(WeightGrams ~ Inoculation + Water, data = shoot_dat)
+Anova(shoot_mass2, type = "2")
+plot(shoot_mass2)
+plot(allEffects(shoot_mass2))
+
+
+## ROOT:SHOOT RATIO ##########################################################
 
 #load data with root:shoot ratio and total biomass (values calculated in excel)
+rs_dat = read_csv("./pips_data/pips_rootshoot_ratios.csv") |>
+  mutate(
+    Inoculation = as.character(Inoculation),
+    Water = as.character(Water)
+  )
+
+#interaction model
+rs_fit1 = aov(RootShootRatio ~ Inoculation * Water, data = rs_dat)
+Anova(rs_fit1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
+plot(rs_fit1)
+
+#additive model 
+mass_fit2 = aov(RootShootRatio ~ Inoculation + Water, data = rs_dat)
+Anova(rs_fit2, type = "2")
+plot(rs_fit2)
+
+#plot the filtered data to check the spread
+ggplot(rs_dat, aes(RootShootRatio)) +
+  facet_grid(Water ~ Inoculation) +
+  # scale_x_log10() +
+  geom_histogram()
+
+
+## PERMANOVA #################################################################
 
 
 
