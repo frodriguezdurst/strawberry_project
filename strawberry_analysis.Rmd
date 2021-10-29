@@ -28,7 +28,6 @@ library(vegan)
 library(ggridges)
 library(viridis)
 library(hrbrthemes)
-library(ggVennDiagram)
 library(decontam)
 library(iNEXT)
 
@@ -105,6 +104,7 @@ taxa_names(ps) <- pretty_names
 #############################################################################
 ############  PRE-DECONTAM: VENN DIAGRAMS  ##################################
 #############################################################################
+library(ggVennDiagram)
 
 # pre inoc table
 pre_inoc_ps <- subset_samples(ps, sample_data(ps)$SampleType=="pre_inoc")
@@ -879,7 +879,7 @@ rarecurve(post_inoc_post_stress_i5_w3,
 ``` {r}
 
 #############################################################################
-################  POST-DECONTAM: NMDS #######################################
+################  POST-DECONTAM: NMDS  ######################################
 #############################################################################
 
 library(labdsv)
@@ -888,13 +888,13 @@ library(metagMisc)
 #determine relative abundance + NMDS plot - drop all the post-inoc/pre-stress samples from future analysis
 #post_inoc_post_stress table 
 post_inoc_post_stress_asv <- as.data.frame(otu_table(post_inoc_post_stress_ps))
-post_inoc_post_stress_asv
+view(post_inoc_post_stress_asv)
 
 #Hellinger transformation for all replicates in post-inoculation/post-stress ASV contingency table
 transformed_pips_ASV <- hellinger(post_inoc_post_stress_asv)
 
 #On this transformed data, calculate a “relative abundance” by summing the new totals for all ASVs (the transformed number of total reads) within a replicate and then dividing the transformed number of reads for each ASV by this total
-rel_abund <- transformed_pips_ASV / colSums(transformed_pips_ASV) 
+rel_abund <- transformed_pips_ASV / rowSums(transformed_pips_ASV) 
 
 #pull out tax table and metadata from post_inoc_post_stress_ps to create new phyloseq object
 pips_metadata <- as(sample_data(post_inoc_post_stress_ps), 'matrix')
@@ -910,14 +910,13 @@ row.names(met) <- pips_metadata$SampleID
 ps.pips <- phyloseq(otu,met,tax)
 
 #Using this new table, calculate Bray-Cutis community dissimilarities for all replicates and build an NMDS visualization where you code inoculum type by color and water treatment by shape.
-
 GP.ord <- ordinate(ps.pips, "NMDS", "bray")
 p1 = plot_ordination(ps.pips, GP.ord, type="samples", color="Inoculation", shape = "Water", title="Bray-Cutis community dissimilarities for all replicates")
 print(p1)
 
 ##Box and whisker plot of average richness ###################################
 
-#Sum relative abundances across samples to add to metadata
+#Sum ASVs across samples to add to metadata
 richness_sums <- rowSums(post_inoc_post_stress_asv)
 
 #add column to new df with corresponding richness values
@@ -941,6 +940,7 @@ ggplot(pips_complete, aes(x=Inoculation, y=SpeciesRichness, fill=Water)) +
 
 #write this to .csv
 pips_complete <- write.csv(pips_complete, "./pips_data/pips_complete.csv")
+
 
 ```
 
@@ -997,7 +997,7 @@ Anova(filtered_fit2, type = "2")
 plot(filtered_fit2)
 
 #check the outliers again
-shapiro.test(filtered_fit$residuals)
+shapiro.test(filtered_fit1$residuals)
 leveneTest(log(SpeciesRichness) ~ Water, data = dat[-c(401, 78, 34, 81, 123), ])
 
 filtered_dat = filtered_dat |>
@@ -1024,7 +1024,6 @@ root_fit2 = aov(log(SpeciesRichness) ~ Inoculation + Water, data = root_dat)
 Anova(root_fit2, type = "2")
 plot(root_fit2)
 plot(allEffects(root_fit2))
-
 
 ## SPECIES RICHNESS: SHOOTS  #################################################
 
@@ -1057,7 +1056,6 @@ Anova(root_mass2, type = "2")
 plot(root_mass2)
 plot(allEffects(root_mass2))
 
-
 ## TOTAL BIOMASS: SHOOTS #####################################################
 #interaction model
 shoot_mass1 = aov(WeightGrams ~ Inoculation * Water, data = shoot_dat)
@@ -1078,8 +1076,12 @@ plot(allEffects(shoot_mass2))
 rs_dat = read_csv("./pips_data/pips_rootshoot_ratios.csv") |>
   mutate(
     Inoculation = as.character(Inoculation),
-    Water = as.character(Water)
+    Water = as.character(Water),
   )
+
+ggplot(rs_dat, aes(Inoculation, RootShootRatio, fill = Water)) +
+  scale_y_log10() +
+  geom_boxplot()
 
 #interaction model
 rs_fit1 = aov(RootShootRatio ~ Inoculation * Water, data = rs_dat)
@@ -1087,19 +1089,56 @@ Anova(rs_fit1, type = "3") # if you have interactions, type-3 sums-of-squares is
 plot(rs_fit1)
 
 #additive model 
-mass_fit2 = aov(RootShootRatio ~ Inoculation + Water, data = rs_dat)
+rs_fit2 = aov(RootShootRatio ~ Inoculation + Water, data = rs_dat)
 Anova(rs_fit2, type = "2")
 plot(rs_fit2)
 
+# Studentized residuals
+MASS::studres(rs_fit1) |>
+  abs() |>
+  sort()
+
+#remove the outliers, re-run the analysis
+filtered_rs = rs_dat[-c(49), ]
+
 #plot the filtered data to check the spread
-ggplot(rs_dat, aes(RootShootRatio)) +
+ggplot(filtered_rs, aes(RootShootRatio)) +
   facet_grid(Water ~ Inoculation) +
   # scale_x_log10() +
   geom_histogram()
 
+#interaction model
+rs_fit1 = aov(log(RootShootRatio) ~ Inoculation * Water, data = filtered_rs)
+Anova(rs_fit1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
+plot(rs_fit1)
+
+shapiro.test(rs_fit1$residuals)
+
+#additive model 
+rs_fit2 = aov(log(RootShootRatio) ~ Inoculation + Water, data = filtered_rs)
+Anova(rs_fit2, type = "2")
+plot(rs_fit2)
+
+shapiro.test(rs_fit2$residuals)
+
+```
+
+
+```{r}
+library(vegan)
 
 ## PERMANOVA #################################################################
 
+#bray curtis distance matrix
+ps.pips.bray <- phyloseq::distance(ps.pips, method = "bray")
+
+#make a data frame from the sample_data
+sampledf <- data.frame(sample_data(ps.pips))
+
+#running adonis test
+adonis_ord = adonis2(ps.pips.bray ~ Inoculation + Water, data = sampledf)
+
+# plot
 
 
 ```
