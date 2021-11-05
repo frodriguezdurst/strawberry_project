@@ -1,0 +1,234 @@
+---
+title: "mean_se"
+author: "Francisca Rodriguez"
+date: "11/4/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(phyloseq)
+
+#load data
+pre_inoc_ps <- readRDS("./intermediate_data/pre_inoc_ps.rds")
+slurry_ps <- readRDS("./intermediate_data/slurry_ps.rds")
+DNA_PCR_neg_ps <- readRDS("./intermediate_data/DNA_PCR_neg_ps.rds")
+di_water_ps <- readRDS("./intermediate_data/di_water_ps.rds")
+i6_ps <- readRDS("./intermediate_data/i6_ps.rds")
+post_inoc_pre_stress_ps <- readRDS("./intermediate_data/post_inoc_pre_stress_ps.rds")
+post_inoc_post_stress_ps <- readRDS("./intermediate_data/post_inoc_post_stress_ps.rds")
+
+```
+
+
+```{r}
+#############################################################################
+####### PRE-DECONTAM: DETERMINE MEAN/STD. E OF SAMPLES ######################
+#############################################################################
+
+##subset slurry by inoculation ##############################################
+slurry1 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 1")
+slurry1_asv <- as.data.frame(otu_table(slurry1))
+sum_slurry1 <- colSums(slurry1_asv)
+  
+slurry2 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 2")
+slurry2_asv <- as.data.frame(otu_table(slurry2))
+sum_slurry2 <- colSums(slurry2_asv)
+
+slurry3 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 3")
+slurry3_asv <- as.data.frame(otu_table(slurry3))
+sum_slurry3 <- colSums(slurry3_asv)
+
+slurry4 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 4")
+slurry4_asv <- as.data.frame(otu_table(slurry4))
+sum_slurry4 <- colSums(slurry4_asv)
+
+slurry5 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 5")
+slurry5_asv <- as.data.frame(otu_table(slurry5))
+sum_slurry5 <- colSums(slurry5_asv)
+
+##subset post_inoc_post_stress by water treatment ###########################
+post_inoc_post_stress1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Water == "1")
+post_inoc_post_stress1_asv <- as.data.frame(otu_table(post_inoc_post_stress1))
+sum_post_inoc_post_stress1 <- colSums(post_inoc_post_stress1_asv)
+
+post_inoc_post_stress2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Water == "2")
+post_inoc_post_stress2_asv <- as.data.frame(otu_table(post_inoc_post_stress2))
+sum_post_inoc_post_stress2 <- colSums(post_inoc_post_stress2_asv)
+
+post_inoc_post_stress3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Water == "3")
+post_inoc_post_stress3_asv <- as.data.frame(otu_table(post_inoc_post_stress3))
+sum_post_inoc_post_stress3 <- colSums(post_inoc_post_stress3_asv)
+
+#find avg. number of ASVs
+mean_pre_inoc_asv = mean(sum_pre_inoc_asv)
+mean_di_water_asv = mean(sum_di_water_asv)
+mean_DNA_PCR_neg_asv = mean(sum_DNA_PCR_neg_asv)
+mean_i6_asv = mean(sum_i6_asv)
+mean_slurry1_asv = mean(sum_slurry1)
+mean_slurry2_asv = mean(sum_slurry2)
+mean_slurry3_asv = mean(sum_slurry3)
+mean_slurry4_asv = mean(sum_slurry4)
+mean_slurry5_asv = mean(sum_slurry5)
+mean_post_inoc_pre_stress_asv = mean(sum_post_inoc_pre_stress_asv)
+mean_post_inoc_post_stress1_asv = mean(sum_post_inoc_post_stress1)
+mean_post_inoc_post_stress2_asv = mean(sum_post_inoc_post_stress2)
+mean_post_inoc_post_stress3_asv = mean(sum_post_inoc_post_stress3)
+
+#find std. err. of ASVs
+std_err_pre_inoc_asv = sd(sum_pre_inoc_asv) / sqrt(length(sum_pre_inoc_asv))
+std_err_di_water_asv = sd(sum_di_water_asv) / sqrt(length(sum_di_water_asv))
+std_err_DNA_PCR_neg_asv = sd(sum_DNA_PCR_neg_asv) / sqrt(length(sum_DNA_PCR_neg_asv))
+std_err_i6_asv = sd(sum_i6_asv) / sqrt(length(sum_i6_asv))
+std_err_slurry1_asv = sd(sum_slurry1) / sqrt(length(sum_slurry1))
+std_err_slurry2_asv = sd(sum_slurry2) / sqrt(length(sum_slurry2))
+std_err_slurry3_asv = sd(sum_slurry3) / sqrt(length(sum_slurry3))
+std_err_slurry4_asv = sd(sum_slurry4) / sqrt(length(sum_slurry4))
+std_err_slurry5_asv = sd(sum_slurry5) / sqrt(length(sum_slurry5))
+std_err_post_inoc_pre_stress_asv = sd(sum_post_inoc_pre_stress_asv) / sqrt(length(sum_post_inoc_pre_stress_asv))
+std_err_post_inoc_post_stress1_asv = sd(sum_post_inoc_post_stress1) / sqrt(length(sum_post_inoc_post_stress1))
+std_err_post_inoc_post_stress2_asv = sd(sum_post_inoc_post_stress2) / sqrt(length(sum_post_inoc_post_stress2))
+std_err_post_inoc_post_stress3_asv = sd(sum_post_inoc_post_stress3) / sqrt(length(sum_post_inoc_post_stress3))
+
+#create a dataframe to export control data ##################################
+ctrl_means <- c(mean_pre_inoc_asv, 
+           mean_di_water_asv, 
+           mean_DNA_PCR_neg_asv, 
+           mean_i6_asv, 
+           mean_slurry1_asv, 
+           mean_slurry2_asv, 
+           mean_slurry3_asv, 
+           mean_slurry4_asv, 
+           mean_slurry5_asv)
+
+ctrl_std_err <- c(std_err_pre_inoc_asv, 
+             std_err_di_water_asv, 
+             std_err_DNA_PCR_neg_asv, 
+             std_err_i6_asv, 
+             std_err_slurry1_asv, 
+             std_err_slurry2_asv, 
+             std_err_slurry3_asv, 
+             std_err_slurry4_asv, 
+             std_err_slurry5_asv)
+
+ctrl_labels <- c("pre_inoc", 
+            "di_water", 
+            "DNA_PCR_neg", 
+            "i6", 
+            "slurry1", 
+            "slurry2", 
+            "slurry3", 
+            "slurry4", 
+            "slurry5")
+            
+ctrl.mean.SE.ASVs <- rbind(ctrl_labels, ctrl_means, ctrl_std_err)
+
+#export as .csv
+ctrl.mean.SE.ASVs <-  write.csv(ctrl.mean.SE.ASVs, "./output/ctrl.mean.SE.ASVs.csv")
+
+## repeat for experimental data #############################################
+exp_means <- c(mean_post_inoc_pre_stress_asv, 
+                  mean_post_inoc_post_stress1_asv, 
+                  mean_post_inoc_post_stress2_asv, 
+                  mean_post_inoc_post_stress3_asv)
+
+exp_std_err <- c(std_err_post_inoc_pre_stress_asv, 
+                  std_err_post_inoc_post_stress1_asv, 
+                  std_err_post_inoc_post_stress2_asv, 
+                  std_err_post_inoc_post_stress3_asv)
+
+exp_labels <- c("post_inoc_pre_stress",
+                  "post_inoc_post_stress1", 
+                  "post_inoc_post_stress2", 
+                  "post_inoc_post_stress3")
+            
+exp.mean.SE.ASVs <- rbind(exp_labels, exp_means, exp_std_err)
+
+#export as .csv
+exp.mean.SE.ASVs <-  write.csv(exp.mean.SE.ASVs, "./output/exp.mean.SE.ASVs.csv")
+
+```
+
+
+```{r}
+#############################################################################
+################ CHECK SPREAD OF NEGATIVE CONTROL ASVS  #####################
+#############################################################################
+
+##DNA PCR NEG####
+DNA_PCR_neg_ps <- subset_samples(ps, sample_data(ps)$SampleType=="DNA_PCR_neg") #DNA_PCR_neg table
+DNA_PCR_neg_ps <- prune_taxa(taxa_sums(DNA_PCR_neg_ps) > 1, DNA_PCR_neg_ps) #get rid of zeroes
+DNA_PCR_neg_names <- paste("DNA_PCR_neg_", sprintf('%0.4d', 1:length(sample_names(DNA_PCR_neg_ps))), sep = "") # generate the row names 
+sample_names(DNA_PCR_neg_ps) <- DNA_PCR_neg_names # reassign the names from the sequences to the generated sample names
+DNA_PCR_neg_asv <- as.data.frame(otu_table(DNA_PCR_neg_ps)) #create asv table
+
+##DI WATER#############
+di_water_ps <- subset_samples(ps, sample_data(ps)$SampleType=="di_water")
+di_water_ps <- prune_taxa(taxa_sums(di_water_ps) > 1, di_water_ps)
+di_water_names <- paste("di_water_", sprintf('%0.4d', 1:length(sample_names(di_water_ps))), sep = "") 
+sample_names(di_water_ps) <- di_water_names
+di_water_asv <- as.data.frame(otu_table(di_water_ps))
+
+##INOCULATION 6 - H2O CONTROL#############
+i6_ps <- subset_samples(ps, sample_data(ps)$SampleType=="i6")
+i6_ps <- prune_taxa(taxa_sums(i6_ps) > 1, i6_ps)
+i6_names <- paste("i6_", sprintf('%0.4d', 1:length(sample_names(i6_ps))), sep = "") 
+sample_names(i6_ps) <- i6_names
+i6_asv <- as.data.frame(otu_table(i6_ps))
+
+##PRE INOC########
+pre_inoc_ps <- subset_samples(ps, sample_data(ps)$SampleType=="pre_inoc")
+pre_inoc_ps <- prune_taxa(taxa_sums(pre_inoc_ps) > 1, pre_inoc_ps)
+pre_inoc_names <- paste("pre_inoc_", sprintf('%0.4d', 1:length(sample_names(pre_inoc_ps))), sep = "") 
+sample_names(pre_inoc_ps) <- pre_inoc_names
+pre_inoc_asv <- as.data.frame(otu_table(pre_inoc_ps))
+
+##SLURRY#########
+slurry_ps <- subset_samples(ps, sample_data(ps)$SampleType=="slurry") #slurry table
+slurry_names <- paste("slurry_", sprintf('%0.4d', 1:length(sample_names(slurry_ps))), sep = "")
+sample_names(slurry_ps) <- slurry_names 
+slurry_asv <- as.data.frame(otu_table(slurry_ps))
+
+##POST INOC PRE STRESS#####
+post_inoc_pre_stress_ps <- subset_samples(ps, sample_data(ps)$SampleType=="post_inoc_pre_stress")
+post_inoc_pre_stress_names <- paste("post_inoc_pre_stress_", sprintf('%0.4d', 1:length(sample_names(post_inoc_pre_stress_ps))), sep = "")
+sample_names(post_inoc_pre_stress_ps) <- post_inoc_pre_stress_names
+post_inoc_pre_stress_asv <- as.data.frame(otu_table(post_inoc_pre_stress_ps))
+
+##POST INOC POST STRESS####
+post_inoc_post_stress_ps <- subset_samples(ps, sample_data(ps)$SampleType=="post_inoc_post_stress")
+post_inoc_post_stress_names <- paste("post_inoc_post_stress_", sprintf('%0.4d', 1:length(sample_names(post_inoc_post_stress_ps))), sep = "")
+sample_names(post_inoc_post_stress_ps) <- post_inoc_post_stress_names
+post_inoc_post_stress_asv <- as.data.frame(otu_table(post_inoc_post_stress_ps)) 
+
+```
+
+```{r}
+##COMBINE ASV TABLES########
+
+#create control ASV table
+control_asvs <- dplyr::bind_rows(DNA_PCR_neg_asv, di_water_asv, i6_asv, pre_inoc_asv)
+
+#obtain a list of all the columns in that data frame
+asvs <- colnames(control_asvs)
+
+#filter for ASVs present in controls
+edited_slurry <- slurry_asv[,asvs]
+edited_postinocprestress <- post_inoc_pre_stress_asv[,asvs]
+edited_postinocpoststress <- post_inoc_post_stress_asv[,asvs]
+
+#combine data frames
+comboASVs <- dplyr::bind_rows(control_asvs, edited_slurry, edited_postinocprestress, edited_postinocpoststress)
+
+#export as .csv
+controlASVs <-  write.csv(comboASVs, "./output/controlASVs.csv")
+
+##DETERMINE TOTAL READS FROM TREATMENT ####
+totalTreatmentReads <- rowSums(post_inoc_post_stress_asv)
+treatmentASVs <- write.csv(totalTreatmentReads, "./output/treatmentASVs.csv")
+
+```
