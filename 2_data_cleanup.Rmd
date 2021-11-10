@@ -10,6 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+#############################################################################
+##################### PRE-DECONTAM ##########################################
+#############################################################################
+
 library(ggVennDiagram)
 library(phyloseq)
 
@@ -20,10 +24,7 @@ ps <- readRDS("./intermediate_data/ps.rds")
 
 
 ```{r}
-#############################################################################
-############  PRE-DECONTAM: VENN DIAGRAMS  ##################################
-#############################################################################
-
+## SUBSET DATA AS NEEDED ##
 
 # pre inoc table
 pre_inoc_ps <- subset_samples(ps, sample_data(ps)$SampleType=="pre_inoc")
@@ -89,9 +90,7 @@ post_inoc_post_stress_i5_w3 <- subset_samples(post_inoc_post_stress_ps, sample_d
 ```
 
 ```{r}
-#############################################################################
-##NEGATIVE CONTROL EXPOLORATION - VENN DIAGRAMS##############################
-#############################################################################
+##NEGATIVE CONTROL EXPLORATION - VENN DIAGRAMS ##
 
 #sum asv columns into a list
 sum_pre_inoc_asv = colSums(pre_inoc_asv)
@@ -132,6 +131,8 @@ ASV_sums <- colSums(ASV_table)
 ASV_index <- which(ASV_sums > 1)
 
 ```
+
+
 ```{r}
 #save phyloseq objects
 

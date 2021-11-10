@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 
-##INITIAL SETUP################################
+#load libraries 
 library(phyloseq)
 library(tibble)
 library(dplyr)
@@ -84,6 +84,6 @@ pretty_names <- paste("ASV", sprintf('%0.4d', 1:length(taxa_names(ps))), sep = "
 taxa_names(ps) <- pretty_names
 
 #save phyloseq object
-ps <- saveRDS(ps, "./intermediate_data/ps.rds")
+saveRDS(ps, "./intermediate_data/ps.rds")
 
 ```
