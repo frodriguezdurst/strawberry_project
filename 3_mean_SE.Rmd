@@ -1,5 +1,5 @@
 ---
-title: "mean_se"
+title: "Mean / standard error"
 author: "Francisca Rodriguez"
 date: "11/4/2021"
 output: html_document
@@ -9,23 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
+**Pre-decontamination**
 ```{r}
-#############################################################################
-################### PRE-DECONTAM ############################################
-#############################################################################
-
 library(phyloseq)
 library(dplyr)
 
 #load data
-pre_inoc_ps <- readRDS("./intermediate_data/pre_inoc_ps.rds")
-slurry_ps <- readRDS("./intermediate_data/slurry_ps.rds")
-DNA_PCR_neg_ps <- readRDS("./intermediate_data/DNA_PCR_neg_ps.rds")
-di_water_ps <- readRDS("./intermediate_data/di_water_ps.rds")
-i6_ps <- readRDS("./intermediate_data/i6_ps.rds")
-post_inoc_pre_stress_ps <- readRDS("./intermediate_data/post_inoc_pre_stress_ps.rds")
-post_inoc_post_stress_ps <- readRDS("./intermediate_data/post_inoc_post_stress_ps.rds")
+ps <- readRDS("./intermediate_data/ps.rds")
 
 #create a richness function
 richness <- function(v) {
@@ -41,60 +31,139 @@ se <- function(s) {
 
 ```
 
-
+**Subset data**
 ```{r}
+#initialize variables + lists for loop
+sd <- as.data.frame(sample_data(ps))
+categories <- unique(sd$SampleType)
+all_samples <- list()
 
-## SLURRY ##
+for (a_cat in categories) {
+  
+  subset_ps <- subset_samples(ps, sample_data(ps)$SampleType==a_cat)
+  pruned_ps <- prune_taxa(taxa_sums(subset_ps) > 0, subset_ps)
 
-#determine mean per sample
+  all_samples[[a_cat]] <- subset_ps  #phyloseq object list of data by sample type
+  
+}
 
-#Inoculation 1 
-slurry1 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 1")
-slurry1_asv <- as.data.frame(otu_table(slurry1))
-mean_slurry_1a <- richness(slurry1_asv[1,])
-mean_slurry_1b <- richness(slurry1_asv[2,])
-rep_slurry_1a = 1 
-rep_slurry_1b = 1 
-
-#Inoculation 2
-slurry2 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 2")
-slurry2_asv <- as.data.frame(otu_table(slurry2))
-mean_slurry_2a <- richness(slurry2_asv[1,])
-mean_slurry_2b <- richness(slurry2_asv[2,])
-rep_slurry_2a = 1
-rep_slurry_2b = 1
-
-#Inoculation 3
-slurry3 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 3")
-slurry3_asv <- as.data.frame(otu_table(slurry3))
-mean_slurry_3a <- richness(slurry3_asv[1,])
-mean_slurry_3b <- richness(slurry3_asv[2,])
-rep_slurry_3a = 1
-rep_slurry_3b = 1 
-
-#Inoculation 4
-slurry4 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 4")
-slurry4_asv <- as.data.frame(otu_table(slurry4))
-mean_slurry_4a <- richness(slurry4_asv[1,])
-mean_slurry_4b <- richness(slurry4_asv[2,])
-rep_slurry_4a = 1
-rep_slurry_4b = 1 
-
-#Inoculation 5
-slurry5 <- subset_samples(slurry_ps, sample_data(slurry_ps)$Type == "Inoculum 5")
-slurry5_asv <- as.data.frame(otu_table(slurry5))
-mean_slurry_5a <- richness(slurry5_asv[1,])
-mean_slurry_5b <- richness(slurry5_asv[2,])
-rep_slurry_5a = 1 
-rep_slurry_5b = 1 
 
 ```
+
+
+**Calculate richness / mean / se / replicate number (n)**
+```{r}
+library(dplyr)
+
+slurry_data <- subset_samples(all_samples$slurry)
+
+slurry_asv <- as.data.frame(otu_table(slurry_data))
+types <- sample_data(slurry_data)$Type
+
+mean_slurry <- apply(slurry_asv, 1, richness)
+se <- apply(slurry_asv, 1, se)
+types$mean <- mean_slurry
+types$se <- se
+types$rep <- 1
+types$sample <- "slurry"
+
+
+
+water_data <- subset_samples(all_samples$post_inoc_post_stress)
+
+water_asv <- as.data.frame(otu_table(water_data))
+types <- as.data.frame(sample_data(water_data)$Water)
+
+
+mean_post_inoc_post_stress <- apply(water_asv, 1, richness)
+se <- apply(water_asv, 1, se)
+
+types$mean <- mean_post_inoc_post_stress
+types <- types %>% group_by(sample_data(water_data)$Water) %>% mutate(rep = n())
+types$se <- se
+types$sample <- "water"
+
+
+data <- c("slurry", "post_inoc_post_stress", "post_inoc_pre_stress", "pre_inoc", "di_water", "DNA_neg", "i6" )
+sampling <- c("Type", "Water", "SampleType", "SampleType", "SampleType", "SampleType", "SampleType" )
+
+total_data <- data.frame()
+
+for (i in 1:length(data)){
+  a <- data[1]
+  b <- sampling[1]
+  x_asv <- subset_samples(all_samples[[a]])
+  meta_x <- sample_data(x_asv)
+  meta_x$Type
+  
+  x_asv <- as.data.frame(otu_table(x_asv))
+  
+  meta_x <- data.frame(meta)
+  
+  richness <- apply(x_asv, 1, richness)
+  se <- apply(x_asv, 1, se)
+  
+  meta_x$richness <- richness
+  meta_x <- meta_x %>% group_by(meta) %>% mutate(rep = n())
+  
+  meta_x$type <- ifelse(i == 2|3, "treatment", "control")
+  
+  total_data <- rbind(total_data, meta_x)
+  
+return(total_data)
+}
+
+
+
+pre_inoc_asv <- as.data.frame(otu_table(pre_inoc_ps))
+di_water_asv <- as.data.frame(otu_table(di_water_ps))
+DNA_PCR_neg_asv <- as.data.frame(otu_table(DNA_PCR_neg_ps))
+i6_asv <- as.data.frame(otu_table(i6_ps))
+
+```
+
 
 
 ```{r}
 
 ## POST INOC POST STRESS ##
 
+##establish inoculation names for loops
+water_names <- c("W1", "W2", "W3")
+water_vec <- c("1", "2", "3")
+
+for (water in water_vec) {
+  a_ps <- subset_samples(all_samples[["post_inoc_post_stress"]], 
+                         Water == water)
+  a_pr <- prune_taxa(taxa_sums(a_ps) > 0, a_ps)
+  post_inoc_post_stress[[water]] <- a_pr
+  post_stress_asv <- as.data.frame(otu_table(pruned_ps))
+  
+}
+
+names(post_inoc_post_stress) <- water_names
+
+
+##post inoc pre stress loops##
+prestress_asvs <- list()
+prestress <- list()
+
+for (inoc in inocs_vec) {
+  
+  subset_ps <- subset_samples(all_samples[["post_inoc_pre_stress"]], 
+                              Inoculation == inoc)
+  pruned_ps <- prune_taxa(taxa_sums(subset_ps) > 0, subset_ps)
+  asv <- as.data.frame(otu_table(pruned_ps))
+  
+  prestress_asvs[[inoc]] <- asv  #asv list of post-inoc pre-stress data
+  prestress[[inoc]] <- pruned_ps  #phyloseq object list of pre-stress data
+  
+}
+
+
+```
+
+```{r}
 #create ASV tables for post inoc post stress x water treatment 
 post_inoc_post_stress1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Water == "1")
 post_inoc_post_stress1_asv <- as.data.frame(otu_table(post_inoc_post_stress1))
@@ -137,7 +206,7 @@ DNA_PCR_neg_asv <- as.data.frame(otu_table(DNA_PCR_neg_ps))
 i6_asv <- as.data.frame(otu_table(i6_ps))
 post_inoc_pre_stress_asv <- as.data.frame(otu_table(post_inoc_pre_stress_ps))
 
-#calculate mean / se / replicate number (n) for each sample
+#calculate mean / standard error / replicate number (n) for each sample
 
 #pre inoc
 sum_pre_inoc <- apply(pre_inoc_asv, 1, richness)

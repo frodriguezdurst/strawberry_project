@@ -1,5 +1,5 @@
 ---
-title: "data cleanup"
+title: "Data cleanup"
 author: "Francisca Rodriguez"
 date: "11/4/2021"
 output: html_document
@@ -9,12 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+**Pre-decontamination**
 ```{r}
-#############################################################################
-##################### PRE-DECONTAM ##########################################
-#############################################################################
-
-library(ggVennDiagram)
 library(phyloseq)
 
 #load data
@@ -22,108 +18,38 @@ ps <- readRDS("./intermediate_data/ps.rds")
 
 ```
 
-
+**Subset by sample type**
 ```{r}
-## SUBSET DATA AS NEEDED ##
+#initialize variables + lists for loop
+sd <- as.data.frame(sample_data(ps))
+categories <- unique(sd$SampleType)
+all_samples_asv <- list()
+total_index <- list()
+max_asv <- list()
 
-# pre inoc table
-pre_inoc_ps <- subset_samples(ps, sample_data(ps)$SampleType=="pre_inoc")
-pre_inoc_asv <- as.data.frame(otu_table(pre_inoc_ps))
+for (a_cat in categories) {
+  
+  subset_ps <- subset_samples(ps, sample_data(ps)$SampleType==a_cat)
+  asv <- as.data.frame(otu_table(subset_ps))
+  index = which(colSums(asv) > 0)
+  total_index[[a_cat]] <- index
+  max_asv[[a_cat]] <- max(colSums(asv)) #find highest number of reads for any ASV found in each sample type
+  
+  all_samples_asv[[a_cat]] <- asv             #combined asv tables of data by sample type
+}
 
-#slurry table
-slurry_ps <- subset_samples(ps, sample_data(ps)$SampleType=="slurry")
-slurry_asv <- as.data.frame(otu_table(slurry_ps))
-
-# #DNA_PCR_neg table
-DNA_PCR_neg_ps <- subset_samples(ps, sample_data(ps)$SampleType=="DNA_PCR_neg")
-DNA_PCR_neg_asv <- as.data.frame(otu_table(DNA_PCR_neg_ps))
-
-#di_water table
-di_water_ps <- subset_samples(ps, sample_data(ps)$SampleType=="di_water")
-di_water_asv <- as.data.frame(otu_table(di_water_ps))
-
-#i6 table
-i6_ps <- subset_samples(ps, sample_data(ps)$SampleType=="i6")
-i6_asv <- as.data.frame(otu_table(i6_ps))
-
-#post_inoc_pre_stress table
-post_inoc_pre_stress_ps <- subset_samples(ps, sample_data(ps)$SampleType=="post_inoc_pre_stress")
-post_inoc_pre_stress_asv <- as.data.frame(otu_table(post_inoc_pre_stress_ps))
-
-##subset post_inoc_pre_stress to count ############################################## 
-post_inoc_pre_stress_i1 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "1")
-post_inoc_pre_stress_i2 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "2")
-post_inoc_pre_stress_i3 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "3")
-post_inoc_pre_stress_i4 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "4")
-post_inoc_pre_stress_i5 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "5")
-
-#post_inoc_post_stress table
-post_inoc_post_stress_ps <- subset_samples(ps, sample_data(ps)$SampleType=="post_inoc_post_stress")
-post_inoc_post_stress_asv <- as.data.frame(otu_table(post_inoc_post_stress_ps))
-
-##subset post_inoc_post_stress to count###############################################
-#inoculation 1 
-post_inoc_post_stress_i1_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "1" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-post_inoc_post_stress_i1_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "1" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-post_inoc_post_stress_i1_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "1" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-
-#inoculation 2
-post_inoc_post_stress_i2_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "2" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-post_inoc_post_stress_i2_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "2" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-post_inoc_post_stress_i2_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "2" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-
-#inoculation 3
-post_inoc_post_stress_i3_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "3" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-post_inoc_post_stress_i3_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "3" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-post_inoc_post_stress_i3_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "3" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-
-#inoculation 4
-post_inoc_post_stress_i4_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "4" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-post_inoc_post_stress_i4_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "4" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-post_inoc_post_stress_i4_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "4" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-
-#inoculation 5
-post_inoc_post_stress_i5_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "5" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-post_inoc_post_stress_i5_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "5" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-post_inoc_post_stress_i5_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "5" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-
+#save ASV table
+saveRDS(all_samples_asv, "./intermediate_data/all_samples_asv.rds")
 ```
 
+**Negative control exploration - Venn diagram**
+
 ```{r}
-##NEGATIVE CONTROL EXPLORATION - VENN DIAGRAMS ##
+library(ggVennDiagram)
 
-#sum asv columns into a list
-sum_pre_inoc_asv = colSums(pre_inoc_asv)
-sum_slurry_asv = colSums(slurry_asv)
-sum_DNA_PCR_neg_asv = colSums(DNA_PCR_neg_asv)
-sum_di_water_asv = colSums(di_water_asv)
-sum_i6_asv = colSums(i6_asv)
-sum_post_inoc_pre_stress_asv = colSums(post_inoc_pre_stress_asv)
-sum_post_inoc_post_stress_asv = colSums(post_inoc_post_stress_asv)
-
-#get index of values > 0
-index_pre_inoc_asv = which(sum_pre_inoc_asv > 0)
-index_slurry_asv = which(sum_slurry_asv > 0)
-index_DNA_PCR_neg_asv = which(sum_DNA_PCR_neg_asv > 0)
-index_di_water_asv = which(sum_di_water_asv > 0)
-index_i6_asv = which(sum_i6_asv > 0)
-index_post_inoc_pre_stress_asv = which(sum_post_inoc_pre_stress_asv > 0)
-index_post_inoc_post_stress_asv = which(sum_post_inoc_post_stress_asv > 0)
-
-#create a list containing all the indexes from above
-total_index <- list(DNA_PCR_neg = index_DNA_PCR_neg_asv, di_water = index_di_water_asv, pre_inoc = index_pre_inoc_asv, slurry = index_slurry_asv, post_inoc_pre_stress = index_post_inoc_pre_stress_asv, post_inoc_post_stress = index_post_inoc_post_stress_asv, i6 = index_i6_asv)
-
-#create venn diagram
+#create Venn diagram
 ggVennDiagram(total_index, label = "count")
 
-#find highest number of reads for any ASV found in each sample type
-max_pre_inoc_asv = max(sum_pre_inoc_asv)
-max_slurry_asv = max(sum_slurry_asv)
-max_DNA_PCR_neg_asv = max(sum_DNA_PCR_neg_asv)
-max_di_water_asv = max(sum_di_water_asv)
-max_i6_asv = max(sum_i6_asv)
-max_post_inoc_pre_stress_asv = max(sum_post_inoc_pre_stress_asv)
-max_post_inoc_post_stress_asv = max(sum_post_inoc_post_stress_asv)
 
 #check total count of ASVs, remove ASVs with one count, re-tally
 ASV_table <- as(otu_table(ps), "matrix")
@@ -131,19 +57,3 @@ ASV_sums <- colSums(ASV_table)
 ASV_index <- which(ASV_sums > 1)
 
 ```
-
-
-```{r}
-#save phyloseq objects
-
-saveRDS(pre_inoc_ps, "./intermediate_data/pre_inoc_ps.rds")
-saveRDS(slurry_ps, "./intermediate_data/slurry_ps.rds")
-saveRDS(DNA_PCR_neg_ps, "./intermediate_data/DNA_PCR_neg_ps.rds")
-saveRDS(di_water_ps, "./intermediate_data/di_water_ps.rds")
-saveRDS(i6_ps, "./intermediate_data/i6_ps.rds")
-saveRDS(post_inoc_pre_stress_ps, "./intermediate_data/post_inoc_pre_stress_ps.rds")
-saveRDS(post_inoc_post_stress_ps, "./intermediate_data/post_inoc_post_stress_ps.rds")
-
-```
-
-

@@ -1,5 +1,5 @@
 ---
-title: "decontam"
+title: "Decontamination"
 author: "Francisca Rodriguez"
 date: "11/4/2021"
 output: html_document
@@ -19,15 +19,10 @@ ps <- readRDS("./intermediate_data/ps.rds")
 
 ```
 
-
+**Decontaminate controls**
 ```{r}
-#############################################################################
-################ DECONTAMINATE CONTROLS #####################################
-#############################################################################
-
-#remove ASVs with only one read 
+#remove taxa with only one read 
 ps <- prune_taxa(taxa_sums(ps) > 1, ps)
-ps
 
 #look at the library sizes of the controls and samples
 df <- as.data.frame(sample_data(ps)) # Put sample_data into a ggplot-friendly data.frame

@@ -1,5 +1,5 @@
 ---
-title: "alpha_beta_diversity_curves"
+title: "Alpha / beta diversity curves"
 author: "Francisca Rodriguez"
 date: "11/4/2021"
 output: html_document
@@ -9,11 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+**Post-decontamination**
 ```{r}
-#############################################################################
-##################### POST-DECONTAM  ########################################
-#############################################################################
-
 #load libraries / data
 library(phyloseq)
 library(ggplot2)
@@ -24,96 +21,138 @@ ps.noncontam <- readRDS("./intermediate_data/ps.noncontam.rds")
 
 ```
 
+**Subset by sample type**
 ```{r}
-##SUBSET POST INOC PRE STRESS ######################################################
+#initialize variables + lists for loop
+sd <- as.data.frame(sample_data(ps.noncontam))
+categories <- unique(sd$SampleType)
+all_samples_pruned_asv <- list()
+all_samples_pruned <- list()
 
-#post_inoc_pre_stress table 
-post_inoc_pre_stress_ps <- subset_samples(ps.noncontam, sample_data(ps.noncontam)$SampleType=="post_inoc_pre_stress")
+for (a_cat in categories) {
+  
+  subset_ps <- subset_samples(ps.noncontam, sample_data(ps.noncontam)$SampleType==a_cat)
+  pruned_ps <- prune_taxa(taxa_sums(subset_ps) > 0, subset_ps)
+  asv <- as.data.frame(otu_table(pruned_ps))
+  sample_names(pruned_ps) <- paste(a_cat, sprintf('%0.4d', 1:length(sample_names(pruned_ps))), sep = "") # generate the row names 
 
-##label post_inoc_pre_stress by inoculation
-post_inoc_pre_stress_i1 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "1")
-  post_inoc_pre_stress_i1 <- as.data.frame(otu_table(post_inoc_pre_stress_i1))
+  all_samples_pruned_asv[[a_cat]] <- asv    #asv tables of data by sample type
+  all_samples_pruned[[a_cat]] <- subset_ps  #phyloseq object list of data by sample type
   
-post_inoc_pre_stress_i2 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "2")
-  post_inoc_pre_stress_i2 <- as.data.frame(otu_table(post_inoc_pre_stress_i2))
-  
-post_inoc_pre_stress_i3 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "3")
-  post_inoc_pre_stress_i3 <- as.data.frame(otu_table(post_inoc_pre_stress_i3))
-  
-post_inoc_pre_stress_i4 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "4")
-  post_inoc_pre_stress_i4 <- as.data.frame(otu_table(post_inoc_pre_stress_i4))
-  
-post_inoc_pre_stress_i5 <- subset_samples(post_inoc_pre_stress_ps, sample_data(post_inoc_pre_stress_ps)$Inoculation == "5")
-  post_inoc_pre_stress_i5 <- as.data.frame(otu_table(post_inoc_pre_stress_i5))
+}
 
 ```
 
+**Subset post-inoculation pre-stress**
 ```{r}
-##SUBSET POST INOC POST STRESS#####################################################
+#establish inoculation names for loops
+inoc_names <- c("Inoc1", "Inoc2", "Inoc3", "Inoc4", "Inoc5")
+inocs_vec <- c("1", "2", "3", "4", "5")
+prestress_names <- sapply(inoc_names, function(x) paste(x))
+prestress_asvs <- list()
+prestress <- list()
 
-#post_inoc_post_stress table 
-post_inoc_post_stress_ps <- subset_samples(ps.noncontam, sample_data(ps.noncontam)$SampleType=="post_inoc_post_stress")
+#loop to subset
+for (inoc in inocs_vec) {
+  
+  subset_ps <- subset_samples(all_samples_pruned[["post_inoc_pre_stress"]], 
+                              Inoculation == inoc)
+  pruned_ps <- prune_taxa(taxa_sums(subset_ps) > 0, subset_ps)
+  asv <- as.data.frame(otu_table(pruned_ps))
+  
+  prestress_asvs[[inoc]] <- asv   #asv list of post-inoc pre-stress data
+  prestress[[inoc]] <- pruned_ps  #phyloseq object list of pre-stress data
+}
 
-##label post_inoc_post_stress by inoculation x water treatment
+#add names 
+names(prestress) <- prestress_names
+names(prestress_asvs) <- prestress_names
 
-#inoculation 1 
-post_inoc_post_stress_i1_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "1" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-  post_inoc_post_stress_i1_w1 <- as.data.frame(otu_table(post_inoc_post_stress_i1_w1))
+#subset as needed for analysis
+post_inoc_pre_stress_i1 <- as.data.frame(otu_table(prestress[["Inoc1"]]))
+post_inoc_pre_stress_i2 <- as.data.frame(otu_table(prestress[["Inoc2"]]))
+post_inoc_pre_stress_i3 <- as.data.frame(otu_table(prestress[["Inoc3"]]))
+post_inoc_pre_stress_i4 <- as.data.frame(otu_table(prestress[["Inoc4"]]))
+post_inoc_pre_stress_i5 <- as.data.frame(otu_table(prestress[["Inoc5"]]))
 
-post_inoc_post_stress_i1_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "1" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-  post_inoc_post_stress_i1_w2 <- as.data.frame(otu_table(post_inoc_post_stress_i1_w2))
+```
 
-post_inoc_post_stress_i1_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "1" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-  post_inoc_post_stress_i1_w3 <- as.data.frame(otu_table(post_inoc_post_stress_i1_w3))
+**Subset post-inoculation post-stress**
+```{r}
+##establish inoculation names for loops
+inoc_names <- c("Inoc1", "Inoc2", "Inoc3", "Inoc4", "Inoc5")
+inocs_vec <- c("1", "2", "3", "4", "5")
+  
+## Water 1 ## 
+water1 <- list()
+water1_names <- sapply(inoc_names, function(x) paste(x, "Water1"))
+
+for (inoc in inocs_vec) {
+  a_ps <- subset_samples(all_samples_pruned[["post_inoc_post_stress"]], 
+                         Inoculation == inoc & Water == "1")
+  a_pr <- prune_taxa(taxa_sums(a_ps) > 0, a_ps)
+  water1[[inoc]] <- a_pr
+}
+
+names(water1) <- water1_names
+
+## Water 2 ## 
+water2 <- list()
+water2_names <- sapply(inoc_names, function(x) paste(x, "Water2"))
+
+for (inoc in inocs_vec) {
+  a_ps <- subset_samples(all_samples_pruned[["post_inoc_post_stress"]], 
+                         Inoculation == inoc & Water == "2")
+  a_pr <- prune_taxa(taxa_sums(a_ps) > 0, a_ps)
+  water2[[inoc]] <- a_pr
+}
+
+names(water2) <- water2_names
+
+## Water 3 ## 
+water3 <- list()
+water3_names <- sapply(inoc_names, function(x) paste(x, "Water3"))
+
+for (inoc in inocs_vec) {
+  a_ps <- subset_samples(all_samples_pruned[["post_inoc_post_stress"]], 
+                         Inoculation == inoc & Water == "2")
+  a_pr <- prune_taxa(taxa_sums(a_ps) > 0, a_ps)
+  water3[[inoc]] <- a_pr
+}
+
+names(water3) <- water3_names
+
+# make big list for all post inoc post stress treatments
+post_inoc_post_stress <- c(water1, water2, water3)
+
+#inoculation 1
+post_inoc_post_stress_i1_w1 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc1 Water1"]]))
+post_inoc_post_stress_i1_w2 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc1 Water2"]]))
+post_inoc_post_stress_i1_w3 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc1 Water3"]]))
 
 #inoculation 2
-post_inoc_post_stress_i2_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "2" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-  post_inoc_post_stress_i2_w1 <- as.data.frame(otu_table(post_inoc_post_stress_i2_w1))
-
-post_inoc_post_stress_i2_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "2" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-  post_inoc_post_stress_i2_w2 <- as.data.frame(otu_table(post_inoc_post_stress_i2_w2))
-
-post_inoc_post_stress_i2_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "2" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-  post_inoc_post_stress_i2_w3 <- as.data.frame(otu_table(post_inoc_post_stress_i2_w3))
+post_inoc_post_stress_i2_w1 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc2 Water1"]]))
+post_inoc_post_stress_i2_w2 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc2 Water2"]]))
+post_inoc_post_stress_i2_w3 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc2 Water2"]]))
 
 #inoculation 3
-post_inoc_post_stress_i3_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "3" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-  post_inoc_post_stress_i3_w1 <- as.data.frame(otu_table(post_inoc_post_stress_i3_w1))
-
-post_inoc_post_stress_i3_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "3" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-  post_inoc_post_stress_i3_w2 <- as.data.frame(otu_table(post_inoc_post_stress_i3_w2))
-
-post_inoc_post_stress_i3_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "3" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-  post_inoc_post_stress_i3_w3 <- as.data.frame(otu_table(post_inoc_post_stress_i3_w3))
+post_inoc_post_stress_i3_w1 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc3 Water1"]]))
+post_inoc_post_stress_i3_w2 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc3 Water2"]]))
+post_inoc_post_stress_i3_w3 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc3 Water3"]]))
 
 #inoculation 4
-post_inoc_post_stress_i4_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "4" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-  post_inoc_post_stress_i4_w1 <- as.data.frame(otu_table(post_inoc_post_stress_i4_w1))
-
-post_inoc_post_stress_i4_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "4" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-  post_inoc_post_stress_i4_w2 <- as.data.frame(otu_table(post_inoc_post_stress_i4_w2))
-
-post_inoc_post_stress_i4_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "4" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-  post_inoc_post_stress_i4_w3 <- as.data.frame(otu_table(post_inoc_post_stress_i4_w3))
+post_inoc_post_stress_i4_w1 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc4 Water1"]]))
+post_inoc_post_stress_i4_w2 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc4 Water2"]]))
+post_inoc_post_stress_i4_w3 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc4 Water3"]]))
 
 #inoculation 5
-post_inoc_post_stress_i5_w1 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "5" & sample_data(post_inoc_post_stress_ps)$Water == "1")
-  post_inoc_post_stress_i5_w1 <- as.data.frame(otu_table(post_inoc_post_stress_i5_w1))
-
-post_inoc_post_stress_i5_w2 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "5" & sample_data(post_inoc_post_stress_ps)$Water == "2")
-  post_inoc_post_stress_i5_w2 <- as.data.frame(otu_table(post_inoc_post_stress_i5_w2))
-
-post_inoc_post_stress_i5_w3 <- subset_samples(post_inoc_post_stress_ps, sample_data(post_inoc_post_stress_ps)$Inoculation == "5" & sample_data(post_inoc_post_stress_ps)$Water == "3")
-  post_inoc_post_stress_i5_w3 <- as.data.frame(otu_table(post_inoc_post_stress_i5_w3))
-
+post_inoc_post_stress_i5_w1 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc5 Water1"]]))
+post_inoc_post_stress_i5_w2 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc5 Water2"]]))
+post_inoc_post_stress_i5_w3 <- as.data.frame(otu_table(post_inoc_post_stress[["Inoc5 Water3"]]))
 ```
 
-
+**Species accumulation curves - beta diversity**
 ```{r}
-#############################################################################
-######## SPECIES ACCUMULATION CURVES (BETA DIVERSITY)  ######################
-#############################################################################
-  
 par(mfrow=c(4,5))
 
 ##POST INOC PRE STRESS #####################################################
@@ -242,13 +281,8 @@ plot(accurve_posti5w3$sites, accurve_posti5w3$richness,
 
 ```
 
-
+**Sequencing depth curves - alpha diversity**
 ```{r}
-
-#############################################################################
-################ SEQ DEPTH CURVES (ALPHA DIVERSITY)  ########################
-#############################################################################
-
 par(mfrow=c(4,5))
 
 ##POST INOC PRE STRESS#######################################################
