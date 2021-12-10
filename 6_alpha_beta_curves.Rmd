@@ -46,8 +46,8 @@ for (a_cat in categories) {
 **Subset post-inoculation pre-stress**
 ```{r}
 #establish inoculation names for loops
-inoc_names <- c("Inoc1", "Inoc2", "Inoc3", "Inoc4", "Inoc5")
-inocs_vec <- c("1", "2", "3", "4", "5")
+inoc_names <- c("Inoc1", "Inoc2", "Inoc3", "Inoc4", "Inoc5", "Inoc6")
+inocs_vec <- c("1", "2", "3", "4", "5", "6")
 prestress_names <- sapply(inoc_names, function(x) paste(x))
 prestress_asvs <- list()
 prestress <- list()
@@ -74,6 +74,7 @@ post_inoc_pre_stress_i2 <- as.data.frame(otu_table(prestress[["Inoc2"]]))
 post_inoc_pre_stress_i3 <- as.data.frame(otu_table(prestress[["Inoc3"]]))
 post_inoc_pre_stress_i4 <- as.data.frame(otu_table(prestress[["Inoc4"]]))
 post_inoc_pre_stress_i5 <- as.data.frame(otu_table(prestress[["Inoc5"]]))
+post_inoc_pre_stress_i6 <- as.data.frame(otu_table(prestress[["Inoc6"]]))
 
 ```
 
@@ -185,6 +186,12 @@ plot(accurve_prei5$sites, accurve_prei5$richness,
      xlab = "Number of sample",
      ylab = "Species richness",
      main = "Post-inoc pre-stress ASVs - Inoculation 5")
+
+accurve_prei6 <- specaccum(post_inoc_pre_stress_i6, method = "random", permutations = 400)
+plot(accurve_prei6$sites, accurve_prei6$richness,
+     xlab = "Number of sample",
+     ylab = "Species richness",
+     main = "Post-inoc pre-stress ASVs - Inoculation 6")
 
 
 ##POST INOC POST STRESS #####################################################
@@ -336,6 +343,16 @@ rarecurve(post_inoc_pre_stress_i5,
           xlab = "Sample Size", 
           ylab = "ASV", 
           main = "Post-inoc pre-stress ASVs - Inoculation 5")
+
+#post_inoc_pre_stress_i6
+rarecurve(post_inoc_pre_stress_i6, 
+          step = 20, 
+          col = "blue", 
+          label = FALSE,
+          cex = 0.6, 
+          xlab = "Sample Size", 
+          ylab = "ASV", 
+          main = "Post-inoc pre-stress ASVs - Inoculation 6")
 
 ##POST INOC POST STRESS#######################################################
 

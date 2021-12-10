@@ -49,10 +49,11 @@ strawb_miseq_map$SampleType[grep("pre-inoc", strawb_miseq_map$SampleNotes)] <- "
 # add empty column for control
 strawb_miseq_map <- add_column(strawb_miseq_map, Sample_or_Control = "True Sample")
 
-#label controls (DI water, DNA/PCR negative, pre-inoculated plants)
+#label controls (i6, DI water, DNA/PCR negative, pre-inoculated plants)
 strawb_miseq_map$Sample_or_Control[strawb_miseq_map$SampleType == "di_water"] <- "Control"
 strawb_miseq_map$Sample_or_Control[strawb_miseq_map$SampleType == "DNA_neg"] <- "Control"
 strawb_miseq_map$Sample_or_Control[strawb_miseq_map$SampleType == "pre_inoc"] <- "Control"
+strawb_miseq_map$Sample_or_Control[strawb_miseq_map$Inoculation == "6" & strawb_miseq_map$TimePoint == "T1"] <- "Control"
 
 # remove unwanted samples
 strawb_miseq_map <- strawb_miseq_map[grep("CSIA", strawb_miseq_map$SampleNotes, invert = TRUE),]
@@ -85,6 +86,8 @@ saveRDS(ps2, "./combined_treatment_data/ps2.rds")
 
 **Decontaminate controls**
 ```{r}
+library(decontam)
+
 #remove taxa with only one read 
 ps2 <- prune_taxa(taxa_sums(ps2) > 1, ps2)
 
@@ -136,18 +139,18 @@ saveRDS(ps.pips2, "./combined_treatment_data/ps.pips2.rds")
 richness_sums <- rowSums(post_inoc_post_stress_asv)
 
 #add column to new df with corresponding richness values
-pips_complete <- dplyr::bind_cols(pips_metadata, richness_sums)
+pips_complete2 <- dplyr::bind_cols(pips_metadata, richness_sums)
 
 #rename column
-names(pips_complete)[14] <- 'SpeciesRichness'
-str(pips_complete)
+names(pips_complete2)[14] <- 'SpeciesRichness'
+str(pips_complete2)
 
 #Grouped boxplot by inoculation and water treatment
-ggplot(pips_complete, aes(x=Inoculation, y=SpeciesRichness, fill=Water)) + 
+ggplot(pips_complete2, aes(x=Inoculation, y=SpeciesRichness, fill=Water)) + 
     geom_boxplot() + theme_light()
 
 #Grouped boxplot by inoculation and plant part
-ggplot(pips_complete, aes(x=Inoculation, y=SpeciesRichness, fill=Water)) + 
+ggplot(pips_complete2, aes(x=Inoculation, y=SpeciesRichness, fill=Water)) + 
     geom_boxplot() + theme_light() + facet_wrap(~ Type)
 
 #write this to .csv
@@ -155,7 +158,7 @@ write.csv(pips_complete2, "./combined_treatment_data/pips_complete2.csv")
 
 ```
 
-**Outlier analysis: roots and shoots**
+**Outlier analysis: **
 ```{r}
 #load libraries
 library(tidyverse)
@@ -164,7 +167,11 @@ library(ggpubr)
 library(effects)
 library(emmeans)
 
-dat = pips_complete
+dat = read.csv("./combined_treatment_data/pips_complete2_edited.csv") |>
+  mutate(
+    Inoculation = as.character(Inoculation),
+    Water = as.character(Water)
+  )
 
 # interaction model
 fit1 = aov(log(SpeciesRichness) ~ Type + Inoculation * Water, data = dat)
@@ -183,63 +190,25 @@ MASS::studres(fit1) |>
   abs() |>
   sort()
 
-filtered_dat = filtered_dat |>
-  mutate(res = resid(filtered_fit1))
-
-#check the outliers again
-shapiro.test(fit1$residuals)
-
 #remove the outliers, re-run the analysis
-filtered_dat = dat[-c(401, 78, 34, 81, 123), ]
+filtered_dat = dat[-c(88, 34, 91, 464, 133), ]
 
-#plot the filtered data to check the spread
-ggplot(filtered_dat, aes(log(SpeciesRichness))) +
-  facet_grid(Water ~ Inoculation) +
-  # scale_x_log10() +
-  geom_histogram()
+# interaction model
+fit1 = aov(log(SpeciesRichness) ~ Type + Inoculation * Water, data = filtered_dat)
+Anova(fit1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
 
-```
+# additive model
+fit2 = aov(log(SpeciesRichness) ~ Type + Inoculation + Water, data = filtered_dat)
+Anova(fit2, type = "2") # if you don't have interactions, type-2 sums-of-squares is appropriate
 
-**ANOVA: roots and shoots**
-```{r}
-#interaction model
-filtered_fit1 = aov(log(SpeciesRichness) ~ Type + Inoculation * Water, data = filtered_dat)
-Anova(filtered_fit1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
-plot(filtered_fit1)
-
-#additive model 
-filtered_fit2 = aov(log(SpeciesRichness) ~ Type + InoculationLabeled + WaterLabeled, data = filtered_dat)
-Anova(filtered_fit2, type = "2")
-plot(filtered_fit2)
+#plot to check residuals
+plot(fit1)
+plot(fit2)
 
 #Re-plot grouped boxplot by inoculation and plant part without the outliers
 ggplot(filtered_dat, aes(x=Inoculation, y=log(SpeciesRichness), fill=Water)) + 
     geom_boxplot() + theme_light() + facet_wrap(~ Type)
 
-#Compare to old boxplot of unfiltered data
-ggplot(dat, aes(x=Inoculation, y=log(SpeciesRichness), fill=Water)) + 
-    geom_boxplot() + theme_light() + facet_wrap(~ Type)
-```
-
-**Post-hoc test: planned comparisons**
-```{r}
-#Inoculation
-#apply the emmeans() command to the ANOVA object.
-RichnessPairs1 <- emmeans(filtered_fit2, ~ InoculationLabeled)
-RichnessPairs1
-
-#obtain the planned 95% confidence intervals for a pairwise comparison
-RichnessPlanned1 <- contrast(RichnessPairs1, adjust = "none")
-RichnessPlanned1
-
-#Water
-#apply the emmeans() command to the ANOVA object.
-RichnessPairs2 <- emmeans(filtered_fit2, ~ WaterLabeled)
-RichnessPairs2
-
-#obtain the planned 95% confidence intervals for a pairwise comparison
-RichnessPlanned2 <- contrast(RichnessPairs2, adjust = "none")
-RichnessPlanned2
 ```
 
 **ANOVA: roots**
@@ -261,22 +230,40 @@ plot(allEffects(richness_root_fit2))
 
 **Post-hoc test roots: planned comparisons**
 ```{r}
-#For roots, inoculation and water were significant
-#apply the emmeans() command to the ANOVA object.
-RichRootsW<- emmeans(richness_shoot_fit2, ~ WaterLabeled)
-RichRootsW
-
-#obtain the planned 95% confidence intervals for a pairwise comparison
-RootsPlannedW <- contrast(RichRootsW, adjust = "none")
-RootsPlannedW
+## Type III ANOVA ##
 
 #apply the emmeans() command to the ANOVA object.
-RichRootsI<- emmeans(richness_root_fit2, ~ InoculationLabeled)
-RichRootsI
+RichRootsW1<- emmeans(richness_root_fit1, ~ WaterLabeled)
+RichRootsW1
 
 #obtain the planned 95% confidence intervals for a pairwise comparison
-RootsPlannedI <- contrast(RichRootsI, adjust = "none")
-RootsPlannedI
+RootsPlannedW1 <- contrast(RichRootsW1, adjust = "none")
+RootsPlannedW1
+
+#apply the emmeans() command to the ANOVA object.
+RichRootsI1<- emmeans(richness_root_fit1, ~ InoculationLabeled)
+RichRootsI1
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+RootsPlannedI1 <- contrast(RichRootsI1, adjust = "none")
+RootsPlannedI1
+
+## Type II ANOVA ##
+#apply the emmeans() command to the ANOVA object.
+RichRootsW2<- emmeans(richness_root_fit2, ~ WaterLabeled)
+RichRootsW2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+RootsPlannedW2 <- contrast(RichRootsW2, adjust = "none")
+RootsPlannedW2
+
+#apply the emmeans() command to the ANOVA object.
+RichRootsI2<- emmeans(richness_root_fit2, ~ InoculationLabeled)
+RichRootsI2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+RootsPlannedI2 <- contrast(RichRootsI2, adjust = "none")
+RootsPlannedI2
 ```
 
 **ANOVA: shoots**
@@ -298,62 +285,40 @@ plot(allEffects(richness_shoot_fit2))
 
 **Post-hoc test shoots: planned comparisons**
 ```{r}
-#For shoots, only inoculation was significant
+## Type III ANOVA ##
+
 #apply the emmeans() command to the ANOVA object.
-RichShoots <- emmeans(richness_shoot_fit2, ~ InoculationLabeled)
-RichShoots
+RichShootsW1<- emmeans(richness_shoot_fit1, ~ WaterLabeled)
+RichShootsW1
 
 #obtain the planned 95% confidence intervals for a pairwise comparison
-ShootsPlanned <- contrast(RichShoots, adjust = "none")
-ShootsPlanned
+ShootsPlannedW1 <- contrast(RichShootsW1, adjust = "none")
+ShootsPlannedW1
 
-```
-
-**Outlier analysis: total biomass**
-```{r}
-#additive model
-biomass_mod = aov(WeightGrams ~ Inoculation + Water, data = dat)
-Anova(biomass_mod, type = "2")
-
-# Studentized residuals
-MASS::studres(biomass_mod) |>
-  abs() |>
-  sort()
-
-#remove the outliers, re-run the analysis
-filtered_biomass = dat[-c(182, 36, 198), ]
-```
-
-**ANOVA: total biomass**
-```{r}
-#additive model
-biomass_mod1 = aov(WeightGrams ~ InoculationLabeled + WaterLabeled, data = filtered_biomass)
-Anova(biomass_mod1, type = "2")
-
-#interactive model
-biomass_mod2 = aov(WeightGrams ~ InoculationLabeled * WaterLabeled, data = filtered_biomass)
-Anova(biomass_mod2, type = "3")
-```
-
-**Post-hoc test: total biomass**
-```{r}
-#planned comparison test
-
-#Inoculation
 #apply the emmeans() command to the ANOVA object.
-BiomassPairs1 <- emmeans(biomass_mod1, ~ InoculationLabeled)
+RichShootsI1<- emmeans(richness_shoot_fit1, ~ InoculationLabeled)
+RichShootsI1
 
 #obtain the planned 95% confidence intervals for a pairwise comparison
-BiomassPlanned1 <- contrast(BiomassPairs1, adjust = "none")
-BiomassPlanned1
+ShootsPlannedI1 <- contrast(RichShootsI1, adjust = "none")
+ShootsPlannedI1
 
-#Water
+## Type II ANOVA ##
 #apply the emmeans() command to the ANOVA object.
-BiomassPairs2 <- emmeans(biomass_mod2, ~ WaterLabeled)
+RichShootsW2<- emmeans(richness_shoot_fit2, ~ WaterLabeled)
+RichShootsW2
 
 #obtain the planned 95% confidence intervals for a pairwise comparison
-BiomassPlanned2 <- contrast(BiomassPairs2, adjust = "none")
-BiomassPlanned2
+ShootsPlannedW2 <- contrast(RichShootsW2, adjust = "none")
+ShootsPlannedW2
+
+#apply the emmeans() command to the ANOVA object.
+RichShootsI2 <- emmeans(richness_shoot_fit2, ~ InoculationLabeled)
+RichShootsI2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+ShootsPlannedI2 <- contrast(RichShootsI2, adjust = "none")
+ShootsPlannedI2
 
 ```
 
@@ -379,18 +344,21 @@ MASS::studres(root_mass1) |>
   sort()
 
 #remove the outliers, re-run the analysis
-filtered_dat2 = dat[-c(193), ]
+filtered_root = bio_root[-c(219), ]
 
 ```
 
 **Outlier analysis: above-ground biomass**
 ```{r}
+
+bio_shoot = subset(dat, Type == "Shoot")
+
 #interaction model
-shoot_mass1 = aov(WeightGrams ~ Inoculation * Water, data = shoot_dat)
+shoot_mass1 = aov(WeightGrams ~ Inoculation * Water, data = bio_shoot)
 Anova(shoot_mass1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
 
 #additive model
-shoot_mass2 = aov(WeightGrams ~ Inoculation + Water, data = shoot_dat)
+shoot_mass2 = aov(WeightGrams ~ Inoculation + Water, data = bio_shoot)
 Anova(shoot_mass2, type = "2")
 
 #plot to check residuals
@@ -403,21 +371,20 @@ MASS::studres(shoot_mass1) |>
   sort()
 
 #remove the outliers, re-run the analysis
-filtered_dat3 = dat[-c(182), ]
+filtered_shoot = bio_shoot[-c(384, 439), ]
 ```
 
 **ANOVA: below-ground biomass**
 ```{r}
-bio_root_dat = subset(filtered_dat2, Type == "Root")
   
 #interaction model
-root_mass1= aov(WeightGrams ~ Inoculation * Water, data = bio_root_dat)
+root_mass1= aov(WeightGrams ~ InoculationLabeled * WaterLabeled, data = filtered_root)
 Anova(root_mass1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
 plot(root_mass1, main = "Root")
 plot(allEffects(root_mass1))
 
 #additive model
-root_mass2 = aov(WeightGrams ~ InoculationLabeled + WaterLabeled, data = bio_root_dat)
+root_mass2 = aov(WeightGrams ~ InoculationLabeled + WaterLabeled, data = filtered_root)
 Anova(root_mass2, type = "2")
 plot(root_mass2, main = "Root")
 plot(allEffects(root_mass2))
@@ -425,27 +392,54 @@ plot(allEffects(root_mass2))
 
 **Post-hoc test: below-ground biomass**
 ```{r}
-#planned comparison test 
+## Type III ANOVA ##
+
 #apply the emmeans() command to the ANOVA object.
-BioRootPairs <- emmeans(root_mass2, ~ InoculationLabeled)
+RootsW1<- emmeans(root_mass1, ~ WaterLabeled)
+RootsW1
 
 #obtain the planned 95% confidence intervals for a pairwise comparison
-BioRootsPlanned <- contrast(BioRootPairs, adjust = "none")
-BioRootsPlanned
+RootsPlannedW1 <- contrast(RootsW1, adjust = "none")
+RootsPlannedW1
+
+#apply the emmeans() command to the ANOVA object.
+RootsI1<- emmeans(root_mass1, ~ InoculationLabeled)
+RootsI1
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+RootsPlannedI1 <- contrast(RootsI1, adjust = "none")
+RootsPlannedI1
+
+## Type II ANOVA ##
+
+#apply the emmeans() command to the ANOVA object.
+RootsW2<- emmeans(root_mass2, ~ WaterLabeled)
+RootsW2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+RootsPlannedW2 <- contrast(RootsW2, adjust = "none")
+RootsPlannedW2
+
+#apply the emmeans() command to the ANOVA object.
+RootsI2<- emmeans(root_mass2, ~ InoculationLabeled)
+RootsI2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+RootsPlannedI2 <- contrast(RootsI2, adjust = "none")
+RootsPlannedI2
 ```
 
 **ANOVA: above-ground biomass**
 ```{r}
-bio_shoot_dat = subset(filtered_dat3, Type == "Shoot")
 
 #interaction model
-shoot_mass1 = aov(WeightGrams ~ Inoculation * Water, data = bio_shoot_dat)
+shoot_mass1 = aov(WeightGrams ~ InoculationLabeled * WaterLabeled, data = filtered_shoot)
 Anova(shoot_mass1, type = "3") # if you have interactions, type-3 sums-of-squares is appropriate
 plot(shoot_mass1, main = "Shoot")
 plot(allEffects(shoot_mass1))
 
 #additive model
-shoot_mass2 = aov(WeightGrams ~ InoculationLabeled + WaterLabeled, data = bio_shoot_dat)
+shoot_mass2 = aov(WeightGrams ~ InoculationLabeled + WaterLabeled, data = filtered_shoot)
 Anova(shoot_mass2, type = "2")
 plot(shoot_mass2, main = "Shoot")
 plot(allEffects(shoot_mass2))
@@ -453,15 +447,39 @@ plot(allEffects(shoot_mass2))
 
 **Post-hoc test: above-ground biomass**
 ```{r}
-#planned comparison test 
+## Type III ANOVA ##
+
 #apply the emmeans() command to the ANOVA object.
-BioShootPairs <- emmeans(shoot_mass2, ~ WaterLabeled)
+ShootsW1<- emmeans(shoot_mass1, ~ WaterLabeled)
+ShootsW1
 
 #obtain the planned 95% confidence intervals for a pairwise comparison
-BioShootsPlanned <- contrast(BioShootPairs, adjust = "none")
-BioShootsPlanned
+ShootsPlannedW1 <- contrast(ShootsW1, adjust = "none")
+ShootsPlannedW1
 
-#Plot grouped boxplot by inoculation and plant part without the outliers
-ggplot(filtered_dat3, aes(x=Inoculation, y=WeightGrams, fill=Water)) + 
-    geom_boxplot() + theme_light() + facet_wrap(~ Type)
+#apply the emmeans() command to the ANOVA object.
+ShootsI1<- emmeans(shoot_mass1, ~ InoculationLabeled)
+ShootsI1
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+ShootsPlannedI1 <- contrast(ShootsI1, adjust = "none")
+ShootsPlannedI1
+
+## Type II ANOVA ##
+
+#apply the emmeans() command to the ANOVA object.
+ShootsW2<- emmeans(shoot_mass2, ~ WaterLabeled)
+ShootsW2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+ShootsPlannedW2 <- contrast(ShootsW2, adjust = "none")
+ShootsPlannedW2
+
+#apply the emmeans() command to the ANOVA object.
+ShootsI2<- emmeans(shoot_mass2, ~ InoculationLabeled)
+ShootsI2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+ShootsPlannedI2 <- contrast(ShootsI2, adjust = "none")
+ShootsPlannedI2
 ```

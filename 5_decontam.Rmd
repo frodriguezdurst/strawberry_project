@@ -43,5 +43,3 @@ ps.noncontam
 #save phyloseq object
 saveRDS(ps.noncontam, "./intermediate_data/ps.noncontam.rds")
 ```
-
-

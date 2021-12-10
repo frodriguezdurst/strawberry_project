@@ -91,6 +91,8 @@ ggplot(dat, aes(x=Inoculation, y=log(SpeciesRichness), fill=Water)) +
 
 **Post-hoc test: planned comparisons**
 ```{r}
+## Type II ANOVA ##
+
 #Inoculation
 #apply the emmeans() command to the ANOVA object.
 RichnessPairs1 <- emmeans(filtered_fit2, ~ InoculationLabeled)
@@ -129,22 +131,40 @@ plot(allEffects(richness_root_fit2))
 
 **Post-hoc test roots: planned comparisons**
 ```{r}
-#For roots, inoculation and water were significant
-#apply the emmeans() command to the ANOVA object.
-RichRootsW<- emmeans(richness_shoot_fit2, ~ WaterLabeled)
-RichRootsW
-
-#obtain the planned 95% confidence intervals for a pairwise comparison
-RootsPlannedW <- contrast(RichRootsW, adjust = "none")
-RootsPlannedW
+## Type III ANOVA ##
 
 #apply the emmeans() command to the ANOVA object.
-RichRootsI<- emmeans(richness_root_fit2, ~ InoculationLabeled)
-RichRootsI
+RichRootsW1<- emmeans(richness_root_fit1, ~ WaterLabeled)
+RichRootsW1
 
 #obtain the planned 95% confidence intervals for a pairwise comparison
-RootsPlannedI <- contrast(RichRootsI, adjust = "none")
-RootsPlannedI
+RootsPlannedW1 <- contrast(RichRootsW1, adjust = "none")
+RootsPlannedW1
+
+#apply the emmeans() command to the ANOVA object.
+RichRootsI1<- emmeans(richness_root_fit1, ~ InoculationLabeled)
+RichRootsI1
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+RootsPlannedI1 <- contrast(RichRootsI1, adjust = "none")
+RootsPlannedI1
+
+## Type II ANOVA ##
+#apply the emmeans() command to the ANOVA object.
+RichRootsW2<- emmeans(richness_root_fit2, ~ WaterLabeled)
+RichRootsW2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+RootsPlannedW2 <- contrast(RichRootsW2, adjust = "none")
+RootsPlannedW2
+
+#apply the emmeans() command to the ANOVA object.
+RichRootsI2<- emmeans(richness_root_fit2, ~ InoculationLabeled)
+RichRootsI2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+RootsPlannedI2 <- contrast(RichRootsI2, adjust = "none")
+RootsPlannedI2
 ```
 
 **ANOVA: shoots**
@@ -166,13 +186,39 @@ plot(allEffects(richness_shoot_fit2))
 
 **Post-hoc test shoots: planned comparisons**
 ```{r}
-#For shoots, only inoculation was significant
+## Type III ANOVA ##
+
 #apply the emmeans() command to the ANOVA object.
-RichShoots <- emmeans(richness_shoot_fit2, ~ InoculationLabeled)
-RichShoots
+RichShootsW1<- emmeans(richness_shoot_fit1, ~ WaterLabeled)
+RichShootsW1
 
 #obtain the planned 95% confidence intervals for a pairwise comparison
-ShootsPlanned <- contrast(RichShoots, adjust = "none")
-ShootsPlanned
+ShootsPlannedW1 <- contrast(RichShootsW1, adjust = "none")
+ShootsPlannedW1
+
+#apply the emmeans() command to the ANOVA object.
+RichShootsI1<- emmeans(richness_shoot_fit1, ~ InoculationLabeled)
+RichShootsI1
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+ShootsPlannedI1 <- contrast(RichShootsI1, adjust = "none")
+ShootsPlannedI1
+
+## Type II ANOVA ##
+#apply the emmeans() command to the ANOVA object.
+RichShootsW2<- emmeans(richness_shoot_fit2, ~ WaterLabeled)
+RichShootsW2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+ShootsPlannedW2 <- contrast(RichShootsW2, adjust = "none")
+ShootsPlannedW2
+
+#apply the emmeans() command to the ANOVA object.
+RichShootsI2 <- emmeans(richness_shoot_fit2, ~ InoculationLabeled)
+RichShootsI2
+
+#obtain the planned 95% confidence intervals for a pairwise comparison
+ShootsPlannedI2 <- contrast(RichShootsI2, adjust = "none")
+ShootsPlannedI2
 
 ```

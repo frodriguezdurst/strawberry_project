@@ -33,7 +33,7 @@ for (a_cat in categories) {
   asv <- as.data.frame(otu_table(subset_ps))
   index = which(colSums(asv) > 0)
   total_index[[a_cat]] <- index
-  max_asv[[a_cat]] <- max(colSums(asv)) #find highest number of reads for any ASV found in each sample type
+  max_asv[[a_cat]] <- max(colSums(asv))       #find highest number of reads for any ASV found in each sample type
   
   all_samples_asv[[a_cat]] <- asv             #combined asv tables of data by sample type
 }

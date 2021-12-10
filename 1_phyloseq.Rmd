@@ -44,14 +44,14 @@ strawb_miseq_map$SampleType[strawb_miseq_map$TimePoint == "T0"] <- "post_inoc_pr
 strawb_miseq_map$SampleType[strawb_miseq_map$TimePoint == "T1"] <- "post_inoc_post_stress"
 strawb_miseq_map$SampleType[strawb_miseq_map$SampleNotes == "Empty Extraction Tube Control"] <- "DNA_neg"
 strawb_miseq_map$SampleType[grep("Inoc", strawb_miseq_map$SampleNotes)] <- "slurry"
-strawb_miseq_map$SampleType[strawb_miseq_map$Inoculation == "6"] <- "i6"
+strawb_miseq_map$SampleType[strawb_miseq_map$Inoculation == "6" & strawb_miseq_map$TimePoint == "T1"] <- "i6"
 strawb_miseq_map$SampleType[grep("Inocolum 6", strawb_miseq_map$SampleNotes)] <- "di_water"
 strawb_miseq_map$SampleType[grep("pre-inoc", strawb_miseq_map$SampleNotes)] <- "pre_inoc"
 
 # add empty column for control
 strawb_miseq_map <- add_column(strawb_miseq_map, Sample_or_Control = "True Sample")
 
-#label controls (i6, DI water, DNA/PCR negative, pre-inoculated plants)
+#label controls (i6, DI water, DNA negative, pre-inoculated plants)
 strawb_miseq_map$Sample_or_Control[strawb_miseq_map$SampleType == "i6"] <- "Control"
 strawb_miseq_map$Sample_or_Control[strawb_miseq_map$SampleType == "di_water"] <- "Control"
 strawb_miseq_map$Sample_or_Control[strawb_miseq_map$SampleType == "DNA_neg"] <- "Control"
