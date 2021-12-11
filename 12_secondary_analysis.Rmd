@@ -129,6 +129,12 @@ row.names(met) <- pips_metadata$SampleID
 
 ps.pips2 <- phyloseq(otu,met,tax)
 
+#Using this new table, calculate Bray-Cutis community dissimilarities for all replicates and build an NMDS visualization where you code inoculum type by color and water treatment by shape.
+GP.ord <- ordinate(ps.pips2, "NMDS", "bray")
+p1 = plot_ordination(ps.pips2, GP.ord, type="samples", color="Inoculation", shape = "Water", title="Bray-Cutis community dissimilarities for all replicates")
+print(p1)
+
+
 #save phyloseq object
 saveRDS(ps.pips2, "./combined_treatment_data/ps.pips2.rds")
 ```
